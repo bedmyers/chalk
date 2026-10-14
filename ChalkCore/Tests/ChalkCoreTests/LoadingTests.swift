@@ -85,6 +85,19 @@ struct LoadingTests {
         #expect(DumbbellSet.standardKilograms.roundedDown(c.input) == c.down)
     }
 
+    // MARK: Formatting
+
+    @Test(arguments: [
+        (lb(185), "185", "185 lb"),
+        (lb(137.5), "137.5", "137.5 lb"),
+        (kg(61.25), "61.25", "61.25 kg"),
+        (kg(0), "0", "0 kg"),
+    ])
+    func formatting(weight: Weight, value: String, description: String) {
+        #expect(weight.formattedValue == value)
+        #expect(weight.description == description)
+    }
+
     // MARK: Increase and deload guarantees
 
     struct StepCase: Sendable, CustomTestStringConvertible {

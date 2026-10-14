@@ -18,9 +18,17 @@ struct ChalkApp: App {
         }
     }()
 
+    init() {
+        #if DEBUG
+        FontName.assertAllLoad()
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                // Dark appearance only for v1.
+                .preferredColorScheme(.dark)
         }
         .modelContainer(modelContainer)
     }

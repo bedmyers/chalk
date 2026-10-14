@@ -48,8 +48,12 @@ extension Weight: Comparable {
 }
 
 extension Weight: CustomStringConvertible {
+    /// The number alone, without trailing zeros: "185", "137.5", "61.25".
+    public var formattedValue: String {
+        thousandths % 1000 == 0 ? String(thousandths / 1000) : String(value)
+    }
+
     public var description: String {
-        let number = thousandths % 1000 == 0 ? String(thousandths / 1000) : String(value)
-        return "\(number) \(unit.symbol)"
+        "\(formattedValue) \(unit.symbol)"
     }
 }
