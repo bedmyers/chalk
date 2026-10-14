@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		18D0B13C307FE36600DA536F /* ChalkCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18D0B13B307FE36600DA536F /* ChalkCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		18774C6A307EA7CE003E0BF4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18D0B13C307FE36600DA536F /* ChalkCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +96,7 @@
 				18774C5A307EA7CC003E0BF4 /* Chalk */,
 				18774C6C307EA7CE003E0BF4 /* ChalkTests */,
 				18774C76307EA7CE003E0BF4 /* ChalkUITests */,
+				18D0B13A307FE36600DA536F /* Frameworks */,
 				18774C59307EA7CC003E0BF4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,6 +109,13 @@
 				18774C73307EA7CE003E0BF4 /* ChalkUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		18D0B13A307FE36600DA536F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -125,6 +138,7 @@
 			);
 			name = Chalk;
 			packageProductDependencies = (
+				18D0B13B307FE36600DA536F /* ChalkCore */,
 			);
 			productName = Chalk;
 			productReference = 18774C58307EA7CC003E0BF4 /* Chalk.app */;
@@ -605,6 +619,14 @@
 			relativePath = ChalkCore;
 		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18D0B13B307FE36600DA536F /* ChalkCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18D0B139307FD38E00DA536F /* XCLocalSwiftPackageReference "ChalkCore" */;
+			productName = ChalkCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 18774C50307EA7CC003E0BF4 /* Project object */;
 }
