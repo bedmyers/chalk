@@ -6,16 +6,23 @@ An iOS app for progressive overload lifting. Users enter their program and start
 
 ## Progression rules
 
-Decided:
-- Programs run in **3-week blocks**.
-- Each exercise slot has a target (sets × reps) and a weight.
-- A week counts as a **hit only if every set reaches the target reps**. 8, 8, 8, 7 on a 4×8 target is a miss.
-- If the user hits all 3 weeks of a block, the weight increases for the next block. Otherwise it stays the same.
-- **Skipped weeks pause the block.** A block completes after 3 *completed* weeks, not 3 calendar weeks.
-- **Auto-deload:** after 2 consecutive failed blocks on an exercise, drop its weight ~10% (rounded to loadable plates) and progress from there.
-- **Increments:** smart defaults (+5 lb / +2.5 kg lower body, +2.5 lb / +1.25 kg upper body), editable per exercise.
-- **Units:** lb and kg, chosen by the user in settings. Increments and plate math follow the chosen unit.
-- **Plate rounding:** weights round to what's loadable with a default standard plate set (including small plates). The bar weight and plate set are stored as settings so they can be made editable later.
+Decided (implemented in `ChalkCore`):
+- Programs run in **3-week blocks**, tracked per exercise slot.
+- **Training weeks, not calendar weeks.** A program is a weekly template of days. A week finishes the moment every day in it is completed or skipped. A missed day stays as the next workout until it's logged or skipped.
+- Each exercise slot has a target (sets × reps), an increment, and a starting weight. A slot can appear on several days and shares one weight; every one of those sessions must hit for the week to count.
+- A week counts as a **hit only if the first N sets (N = target sets) of every scheduled session reach the target reps**. 8, 8, 8, 7 on a 4×8 target is a miss. Extra sets are recorded but ignored, so 8, 8, 8, 8, 5 is a hit. Fewer than N sets is a miss.
+- **Skipping:** the user can skip a single day; skipping a week means skipping its remaining days. Per slot: if all of the slot's sessions in a week were skipped, the week is skipped and **pauses the block**. If only some were, each skipped session counts as no sets, so the week is a miss. A completed session where the exercise was dropped also counts as no sets.
+- A block completes after 3 *completed* weeks. If all 3 were hits, the weight increases for the next block. Otherwise it stays the same.
+- **Auto-deload:** after 2 consecutive failed blocks on an exercise, drop its weight ~10% (rounded to the nearest loadable weight, always at least one step lighter, never below the minimum) and progress from there.
+- **Progression uses the prescribed weight.** Reps are judged against the target; the weight actually lifted is recorded but doesn't change the progression.
+- **Increments:** smart defaults (+5 lb / +2.5 kg lower body, +2.5 lb / +1.25 kg upper body), editable per exercise. Increases always **round up** to the next loadable weight (e.g. +1.25 kg on a barbell becomes +1.5 kg).
+- **Units:** lb and kg. Each program has its own unit; the app setting only sets the default for new programs and never converts existing ones.
+- **Equipment types** decide which weights are loadable:
+  - **Barbell:** bar plus plate pairs. Defaults: 45 lb bar with 45/35/25/10/5/2.5/1.25 lb plates; 20 kg bar with 25/20/15/10/5/2.5/1.25/0.5/0.25 kg plates.
+  - **Dumbbell:** 2.5 lb steps up to 20 lb, then 5 lb steps. 1 kg steps up to 10 kg, then 2.5 kg steps (kg steps are an unconfirmed default).
+  - **Machine / cable:** no rounding; the raw increment is applied.
+  - The plate and dumbbell sets are stored as settings so they can be made editable later.
+- **Changing an exercise's targets** archives the slot and starts a successor from the current weight, so old weeks are never re-judged. Successors share a `lineageID` and are shown in the UI as one continuous exercise.
 
 Open (don't implement until decided; ask if a task depends on one):
 - Which progression schemes ship in v1 beyond the 3-week rule (e.g. double progression with rep ranges). Either way, design the rule as a swappable strategy per exercise so schemes can be added without reworking the engine.
@@ -47,7 +54,11 @@ CloudKit is enabled, so every `@Model` must follow these rules or the container 
 
 - **The progression engine is a pure function:** `(history, rules) → next targets`. No SwiftData, no UI, no side effects inside it. It must be fully unit-tested, because a wrong weight bump destroys user trust.
 - Keep domain logic (engine, value types) separate from persistence (`@Model` types) and views.
-- Model hierarchy (rough, refine as needed): Program → Block → Day → ExerciseSlot (target sets/reps, increment, progression rule) and WorkoutSession → SetLog.
+- **Store facts, derive state.** The database stores what the user set up and did. Current weights, block position, and blocks themselves are never stored; the engine recalculates them by replaying history.
+- Model hierarchy (`SchemaV1` in `Chalk/Models`):
+  - Program (unit, archivedAt) → ProgramDay → DayEntry → ExerciseSlot (target sets/reps, increment, starting weight, equipment, progression rule, lineageID)
+  - Program → WorkoutSession (weekNumber, status: inProgress / completed / skipped) → ExerciseLog (snapshot of name, prescribed weight, target sets/reps) → SetLog (reps, weight lifted)
+  - Archive is the normal way to retire a program. Hard delete cascades to days, slots, sessions, logs, and sets.
 - **Keep sessions generic.** Strength sets are one kind of entry; cardio/triathlon sessions will be added later and shouldn't require a migration-heavy redesign.
 
 ## Testing
@@ -57,9 +68,47 @@ CloudKit is enabled, so every `@Model` must follow these rules or the container 
 
 ## Design
 
-- The visual direction is **funky and loud**: bold color, big numbers, playful energy. The exact palette is undecided (candidates: high-contrast black/acid lime/hot pink; retro purple/tangerine/cyan; risograph cream/fluoro pink/blue).
-- Put colors and fonts in a central theme so the palette can be swapped in one place. Don't hardcode colors in views.
-- The weight-increase moment should feel like an event (animation, haptic). It's the app's emotional payoff.
+**Theme: "Leotard After Dark"**: 90s aerobics/workout-tape energy on a near-black background. Funky and loud in the big moments, calm and readable everywhere else.
+
+### Colors
+
+| Token | Hex | Job |
+|---|---|---|
+| `background` | `#110E1C` | App background |
+| `surface` | `#1B1630` | Cards and rows |
+| `border` | `#2A2440` | Subtle dividers and outlines |
+| `textPrimary` | `#F5F2FF` | Main text |
+| `textSecondary` | `#B7AED6` | Secondary text (set/rep targets, captions) |
+| `weight` | `#F7FF3C` (highlighter yellow) | Weights, the most important number on screen |
+| `done` | `#00E0C6` (teal) | Completed sets, success states |
+| `action` | `#FF2D95` (magenta) | Primary buttons and actions |
+| `decor` | `#8A4DFF` (grape) | Decoration only: drop-shadows, shapes. Never text |
+
+- **One job per color.** Don't use yellow for anything but weights, or teal for anything but done/success. Users should learn the color language.
+- Text on `action` and `done` fills uses `background` (dark), not white.
+- Keep contrast at 4.5:1 or better for text. Grape is never used for text.
+
+### Type
+
+- **Display / numbers:** Fugaz One (sporty italic). Weights, screen titles, and the weight-bump moment.
+- **Body / labels:** Barlow Condensed (500/600/700). Exercise names in uppercase with wide letter spacing.
+- Both are Google Fonts (SIL Open Font License). Bundle the font files in the app and register them in Info.plist.
+- Support Dynamic Type: use custom fonts through `Font.custom(_:size:relativeTo:)`.
+
+### The 90s decoration, used sparingly
+
+- **Leotard stripe:** a diagonal repeating stripe of magenta / teal / yellow / grape. Use it only on today's main lift card, the weight-bump moment, onboarding, and the app icon.
+- **Memphis shapes** (zigzag, ring, triangle) and **offset drop-shadows** in a second color (e.g. yellow weight with a magenta shadow): only in those same big moments.
+- Everything else is plain dark cards with at most one accent color. If a screen looks busy, remove decoration first.
+
+### Rules
+
+- All colors and fonts live in one central theme (e.g. `Theme.swift` with semantic tokens above). Never hardcode colors or font names in views.
+- Dark appearance only for v1 (force dark color scheme). A light variant is a later decision.
+- Weights are the biggest, brightest thing on the screen, readable from arm's length mid-set.
+- Touch targets are at least 44pt; set buttons should be bigger, since users tap them between sets.
+- **The weight bump is the emotional payoff:** a full moment with the leotard stripe, the old → new weight in Fugaz One, a haptic, and a short animation. Copy is playful 90s-instructor energy (e.g. "And up! And up!").
+- Design mockups for the theme options live in the Chalk Color Schemes canvas (option 14).
 
 ## Roadmap (not v1 unless asked)
 

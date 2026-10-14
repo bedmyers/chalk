@@ -5,19 +5,14 @@
 //  Created by Blair Myers on 10/13/26.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct ChalkApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+    let modelContainer: ModelContainer = {
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ChalkModelContainer.make()
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -27,6 +22,6 @@ struct ChalkApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(modelContainer)
     }
 }
