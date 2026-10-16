@@ -123,8 +123,34 @@ struct LoadingTests {
     func zeroIncrementStillMovesUp(_ c: StepCase) {
         let ladder = LoadingSettings.standard(for: c.start.unit).ladder(for: c.equipment)
         let next = ladder.increased(c.start, by: Weight(0, c.start.unit))
-        #expect(next > c.start)
+        #expect(next - c.start >= ladder.minimumIncrease(from: c.start))
         #expect(ladder.roundedUp(next) == next)
+    }
+
+    struct MinimumCase: Sendable, CustomTestStringConvertible {
+        let equipment: Equipment
+        let from: Weight
+        let minimum: Weight
+        var testDescription: String { "\(equipment) from \(from)" }
+    }
+
+    // 5 lb / 2.5 kg everywhere, except dumbbells below 20 lb (and below 10 kg).
+    @Test(arguments: [
+        MinimumCase(equipment: .barbell, from: lb(45), minimum: lb(5)),
+        MinimumCase(equipment: .barbell, from: lb(315), minimum: lb(5)),
+        MinimumCase(equipment: .barbell, from: kg(60), minimum: kg(2.5)),
+        MinimumCase(equipment: .machine, from: lb(120), minimum: lb(5)),
+        MinimumCase(equipment: .machine, from: kg(30), minimum: kg(2.5)),
+        MinimumCase(equipment: .dumbbell, from: lb(2.5), minimum: lb(2.5)),
+        MinimumCase(equipment: .dumbbell, from: lb(17.5), minimum: lb(2.5)),
+        MinimumCase(equipment: .dumbbell, from: lb(20), minimum: lb(5)),
+        MinimumCase(equipment: .dumbbell, from: lb(60), minimum: lb(5)),
+        MinimumCase(equipment: .dumbbell, from: kg(8), minimum: kg(1)),
+        MinimumCase(equipment: .dumbbell, from: kg(12.5), minimum: kg(2.5)),
+    ])
+    func minimumIncrease(_ c: MinimumCase) {
+        let ladder = LoadingSettings.standard(for: c.from.unit).ladder(for: c.equipment)
+        #expect(ladder.minimumIncrease(from: c.from) == c.minimum)
     }
 
     @Test(arguments: stepCases)

@@ -11,13 +11,16 @@ public protocol WeightLadder: Sendable {
     /// The heaviest loadable weight that is less than or equal to `weight`,
     /// or nil if `weight` is below `minimum`.
     func roundedDown(_ weight: Weight) -> Weight?
+
+    /// The smallest increase allowed from `weight`, whatever the exercise's increment.
+    func minimumIncrease(from weight: Weight) -> Weight
 }
 
 extension WeightLadder {
-    /// `weight + increment`, rounded up to the next loadable weight.
-    /// Always strictly heavier than `weight`, even for a zero or negative increment.
+    /// `weight` plus the larger of `increment` and the minimum increase, rounded up
+    /// to the next loadable weight. Always at least the minimum increase heavier.
     public func increased(_ weight: Weight, by increment: Weight) -> Weight {
-        let step = max(increment, .epsilon(weight.unit))
+        let step = max(increment, minimumIncrease(from: weight), .epsilon(weight.unit))
         return roundedUp(weight + step)
     }
 
