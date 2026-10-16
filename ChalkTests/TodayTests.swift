@@ -32,6 +32,73 @@ struct SetTapTests {
 }
 
 @MainActor
+@Suite("Weight bumps")
+struct WeightBumpTests {
+    let container: ModelContainer
+    let context: ModelContext
+    let program: Program
+    let pushDay: ProgramDay
+
+    init() throws {
+        container = try ChalkModelContainer.make(inMemory: true)
+        context = container.mainContext
+        program = SampleData.insertProgram(into: context)
+        pushDay = try #require(program.sortedDays.first)
+    }
+
+    /// Logs Push Day for `week`. Every set hits unless its exercise is in `misses`.
+    /// Finishes with `completeAndCollectBumps` and returns what it earned.
+    func finishPushDay(week: Int, misses: Set<String> = []) -> [WeightBump] {
+        let session = program.startSession(for: pushDay, week: week, in: context)
+        for log in session.sortedExerciseLogs {
+            for index in 0..<log.targetSets {
+                let short = misses.contains(log.exerciseName) && index == log.targetSets - 1
+                log.logSet(reps: short ? log.targetReps - 1 : log.targetReps, in: context)
+            }
+        }
+        return session.completeAndCollectBumps()
+    }
+
+    @Test func weeksBeforeTheBlockClosesEarnNothing() {
+        #expect(finishPushDay(week: 1).isEmpty)
+        #expect(finishPushDay(week: 2).isEmpty)
+    }
+
+    @Test func closingAPassedBlockEarnsABumpPerExercise() {
+        finishPushDay(week: 1)
+        finishPushDay(week: 2)
+        let bumps = finishPushDay(week: 3)
+
+        // Upper-body increments are +2.5 lb, but every bump here is raised to the
+        // 5 lb minimum (barbells, and dumbbells from 20 lb up).
+        #expect(bumps == [
+            WeightBump(exerciseName: "Bench Press", from: .pounds(185), to: .pounds(190)),
+            WeightBump(exerciseName: "Overhead Press", from: .pounds(115), to: .pounds(120)),
+            WeightBump(exerciseName: "Incline DB Press", from: .pounds(60), to: .pounds(65)),
+        ])
+    }
+
+    @Test func aMissedWeekOnlyCostsThatExercise() {
+        finishPushDay(week: 1)
+        finishPushDay(week: 2, misses: ["Bench Press"])
+        let bumps = finishPushDay(week: 3)
+        #expect(bumps.map(\.exerciseName) == ["Overhead Press", "Incline DB Press"])
+    }
+
+    @Test func deloadsAreNotCelebrated() throws {
+        let everything: Set = ["Bench Press", "Overhead Press", "Incline DB Press"]
+        for week in 1...5 {
+            #expect(finishPushDay(week: week, misses: everything).isEmpty)
+        }
+        // The 6th miss closes the second failed block: a deload, not a bump.
+        #expect(finishPushDay(week: 6, misses: everything).isEmpty)
+        let bench = try #require(pushDay.sortedEntries.first?.slot)
+        // 185 × 0.9 = 166.5 → nearest loadable is 167.5.
+        #expect(bench.progression().events.last == .deloaded(from: .pounds(185), to: .pounds(167.5)))
+    }
+}
+
+@MainActor
 @Suite("Today plan")
 struct TodayPlanTests {
     /// Held so the in-memory store outlives `init`; a context doesn't retain its container.

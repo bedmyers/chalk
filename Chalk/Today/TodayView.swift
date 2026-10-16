@@ -32,12 +32,26 @@ struct TodayWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isConfirmingSkip = false
     @State private var setTaps = 0
+    @State private var celebration: Celebration?
+
+    /// Weight increases earned by the workout just finished.
+    struct Celebration: Identifiable {
+        let id = UUID()
+        let bumps: [WeightBump]
+    }
 
     var body: some View {
-        if let next = program.nextWorkout() {
-            workout(TodayPlan(program: program, day: next.day, week: next.week))
-        } else {
-            EmptyStateView(title: "No days yet", message: "Add a day to \(program.name) to get started.")
+        Group {
+            if let next = program.nextWorkout() {
+                workout(TodayPlan(program: program, day: next.day, week: next.week))
+            } else {
+                EmptyStateView(title: "No days yet", message: "Add a day to \(program.name) to get started.")
+            }
+        }
+        .fullScreenCover(item: $celebration) { celebration in
+            WeightBumpView(bumps: celebration.bumps) {
+                self.celebration = nil
+            }
         }
     }
 
@@ -58,7 +72,7 @@ struct TodayWorkoutView: View {
 
                 VStack(spacing: 8) {
                     Button("Finish Workout") {
-                        plan.session?.complete()
+                        finish(plan)
                     }
                     .buttonStyle(.chalkPrimary)
                     .disabled(plan.session == nil)
@@ -124,6 +138,12 @@ struct TodayWorkoutView: View {
             log.logSet(reps: log.targetReps, in: modelContext)
         }
         setTaps += 1
+    }
+
+    /// Completes the session and celebrates any weight increases it earned.
+    private func finish(_ plan: TodayPlan) {
+        guard let bumps = plan.session?.completeAndCollectBumps(), !bumps.isEmpty else { return }
+        celebration = Celebration(bumps: bumps)
     }
 
     private func clear(_ set: SetLog) {

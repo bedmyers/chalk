@@ -21,27 +21,30 @@ struct WeightBumpView: View {
                 .frame(height: 40)
                 .offset(x: isRevealed || reduceMotion ? 0 : -500)
 
-            VStack(alignment: .leading, spacing: 28) {
-                Text("And up! And up!")
-                    .font(Theme.Fonts.eyebrow)
-                    .textCase(.uppercase)
-                    .tracking(3)
-                    .foregroundStyle(Theme.Colors.done)
+            // Scrolls only if a big day earns more bumps than fit.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    Text("And up! And up!")
+                        .font(Theme.Fonts.eyebrow)
+                        .textCase(.uppercase)
+                        .tracking(3)
+                        .foregroundStyle(Theme.Colors.done)
 
-                ForEach(bumps) { bump in
-                    bumpRow(bump)
+                    ForEach(bumps) { bump in
+                        bumpRow(bump)
+                    }
+
+                    Text(bumps.count == 1
+                         ? "Three weeks, every rep. Grab a bigger plate."
+                         : "Three weeks, every rep. Grab bigger plates.")
+                        .font(Theme.Fonts.body)
+                        .foregroundStyle(Theme.Colors.textPrimary)
                 }
-
-                Text(bumps.count == 1
-                     ? "Three weeks, every rep. Grab a bigger plate."
-                     : "Three weeks, every rep. Grab bigger plates.")
-                    .font(Theme.Fonts.body)
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                .padding(Theme.Metrics.screenPadding)
+                .padding(.top, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(Theme.Metrics.screenPadding)
-            .padding(.top, 24)
-
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
 
             HStack {
                 Spacer()
@@ -49,8 +52,10 @@ struct WeightBumpView: View {
             }
             .padding(.horizontal, Theme.Metrics.screenPadding)
 
-            Button("Let's Go", action: onDismiss)
-                .buttonStyle(.chalkPrimary)
+            Button("Let's Go") {
+                onDismiss()
+            }
+            .buttonStyle(.chalkPrimary)
                 .padding(Theme.Metrics.screenPadding)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -94,15 +99,15 @@ struct WeightBumpView: View {
 #if DEBUG
 #Preview("One bump") {
     WeightBumpView(bumps: [
-        WeightBump(exerciseName: "Bench Press", from: .pounds(185), to: .pounds(187.5)),
+        WeightBump(exerciseName: "Bench Press", from: .pounds(185), to: .pounds(190)),
     ], onDismiss: {})
     .preferredColorScheme(.dark)
 }
 
 #Preview("Three bumps") {
     WeightBumpView(bumps: [
-        WeightBump(exerciseName: "Bench Press", from: .pounds(185), to: .pounds(187.5)),
-        WeightBump(exerciseName: "Overhead Press", from: .pounds(115), to: .pounds(117.5)),
+        WeightBump(exerciseName: "Bench Press", from: .pounds(185), to: .pounds(190)),
+        WeightBump(exerciseName: "Overhead Press", from: .pounds(115), to: .pounds(120)),
         WeightBump(exerciseName: "Incline DB Press", from: .pounds(60), to: .pounds(65)),
     ], onDismiss: {})
     .preferredColorScheme(.dark)
