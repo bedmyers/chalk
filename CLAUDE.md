@@ -23,7 +23,9 @@ Decided (implemented in `ChalkCore`):
   - **Dumbbell:** 2.5 lb steps up to 20 lb, then 5 lb steps. 1 kg steps up to 10 kg, then 2.5 kg steps (kg steps are an unconfirmed default).
   - **Machine / cable:** no rounding; the raw increment is applied (at least the 5 lb / 2.5 kg minimum).
   - The plate and dumbbell sets are stored as settings so they can be made editable later.
-- **Changing an exercise's targets** archives the slot and starts a successor from the current weight, so old weeks are never re-judged. Successors share a `lineageID` and are shown in the UI as one continuous exercise.
+- **Editing an exercise:** changing sets, reps, increment, equipment, or the current weight archives the slot and starts a successor at the (possibly edited) weight with a fresh 3-week count, so old weeks are never re-judged. The editor warns first ("This restarts your 3-week count"). Name and body region edit in place. Successors share a `lineageID` and are shown in the UI as one continuous exercise.
+- **Weight entry:** barbell weights snap to the nearest loadable weight (shown to the user) and never go below the bar. ± buttons step by the lift's minimum increase.
+- **Programs:** one active program at a time; creating a new one archives the current one after confirmation. Archived programs keep their history and can be restored. Day edits (add, remove, reorder) apply to the current training week immediately. A day with a workout in progress can't be deleted; deleting a day archives exercises that are on no other day.
 
 Open (don't implement until decided; ask if a task depends on one):
 - Which progression schemes ship in v1 beyond the 3-week rule (e.g. double progression with rep ranges). Either way, design the rule as a swappable strategy per exercise so schemes can be added without reworking the engine.

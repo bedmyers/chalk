@@ -45,7 +45,17 @@ struct TodayWorkoutView: View {
             if let next = program.nextWorkout() {
                 workout(TodayPlan(program: program, day: next.day, week: next.week))
             } else {
-                EmptyStateView(title: "No days yet", message: "Add a day to \(program.name) to get started.")
+                EmptyStateView(title: "No days yet", message: "Add a day to \(program.name) to get started.") {
+                    NavigationLink("Add Days", value: Route.program(program))
+                        .buttonStyle(.chalkPrimary)
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: Route.program(program)) {
+                    Label("Edit Program", systemImage: "slider.horizontal.3")
+                }
             }
         }
         .fullScreenCover(item: $celebration) { celebration in
@@ -154,18 +164,32 @@ struct TodayWorkoutView: View {
 /// Shown when there's no active program.
 struct NoProgramView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(Router.self) private var router
+    @State private var isCreatingProgram = false
 
     var body: some View {
         EmptyStateView(
             title: "No program yet",
             message: "Set up your program and starting weights once. Chalk handles the rest."
         ) {
-            #if DEBUG
-            Button("Load Sample Program") {
-                SampleData.insertProgram(into: modelContext)
+            VStack(spacing: 8) {
+                Button("Create Program") {
+                    isCreatingProgram = true
+                }
+                .buttonStyle(.chalkPrimary)
+
+                #if DEBUG
+                Button("Load Sample Program") {
+                    SampleData.insertProgram(into: modelContext)
+                }
+                .buttonStyle(.chalkSecondary)
+                #endif
             }
-            .buttonStyle(.chalkPrimary)
-            #endif
+        }
+        .sheet(isPresented: $isCreatingProgram) {
+            NewProgramSheet(replacing: nil) { program in
+                router.path = [.program(program)]
+            }
         }
     }
 }
@@ -201,19 +225,19 @@ extension EmptyStateView where Actions == EmptyView {
 
 #if DEBUG
 #Preview("Today") {
-    TodayView()
+    ContentView()
         .modelContainer(SampleData.previewContainer())
         .preferredColorScheme(.dark)
 }
 
 #Preview("Mid-workout") {
-    TodayView()
+    ContentView()
         .modelContainer(SampleData.previewContainer(setsLogged: [8, 8]))
         .preferredColorScheme(.dark)
 }
 
 #Preview("No program") {
-    TodayView()
+    ContentView()
         .modelContainer(try! ChalkModelContainer.make(inMemory: true))
         .preferredColorScheme(.dark)
 }

@@ -33,6 +33,28 @@ public struct LoadingSettings: Sendable, Hashable {
 
     public var unit: WeightUnit { plates.unit }
 
+    /// A weight the user entered, adjusted to what can actually be set up.
+    /// Barbell weights snap to the nearest loadable weight (ties go up) and never
+    /// go below the bar. Other equipment is only kept from going negative.
+    public func snapped(_ weight: Weight, for equipment: Equipment) -> Weight {
+        switch equipment {
+        case .barbell: plates.nearest(weight)
+        case .dumbbell, .machine: max(weight, Weight(thousandths: 0, unit: weight.unit))
+        }
+    }
+
+    /// One step heavier or lighter, for ± buttons on weight entry. Steps by the
+    /// lift's smallest jump (so 20 lb dumbbells step down to 17.5, not 15), snaps
+    /// barbells to loadable weights, and never goes below the lightest weight.
+    public func stepped(_ weight: Weight, for equipment: Equipment, up: Bool) -> Weight {
+        let ladder = ladder(for: equipment)
+        if up {
+            return ladder.increased(weight, by: Weight(thousandths: 0, unit: weight.unit))
+        }
+        let step = ladder.minimumIncrease(from: weight - .epsilon(weight.unit))
+        return max(snapped(weight - step, for: equipment), ladder.minimum)
+    }
+
     public func ladder(for equipment: Equipment) -> any WeightLadder {
         switch equipment {
         case .barbell: plates

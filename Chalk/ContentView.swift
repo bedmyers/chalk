@@ -9,8 +9,20 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
+    @State private var router = Router()
+
     var body: some View {
-        TodayView()
+        NavigationStack(path: $router.path) {
+            TodayView()
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .program(let program): ProgramView(program: program)
+                    case .day(let day): DayView(day: day)
+                    }
+                }
+        }
+        .environment(router)
+        .tint(Theme.Colors.action)
     }
 }
 

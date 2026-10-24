@@ -249,7 +249,10 @@ struct ProgramModelTests {
             train(program, days[0], week: week)
         }
 
-        let successor = bench.replaceTargets(sets: 3, reps: 10, in: context)
+        var edited = bench.spec
+        edited.targetSets = 3
+        edited.targetReps = 10
+        let successor = bench.save(edited, in: context)
 
         #expect(bench.isArchived)
         #expect(!successor.isArchived)
