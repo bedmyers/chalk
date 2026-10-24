@@ -50,29 +50,4 @@ extension ExerciseSlot {
         )
         return progressionRule.rule.evaluate(input)
     }
-
-    /// Changes the target by archiving this slot and starting a successor from the
-    /// current weight, so past weeks are never re-judged against the new target.
-    /// The successor shares `lineageID` and takes over this slot's days.
-    @discardableResult
-    func replaceTargets(sets: Int, reps: Int, in context: ModelContext) -> ExerciseSlot {
-        let successor = ExerciseSlot(
-            name: name,
-            equipment: equipment,
-            bodyRegion: bodyRegion,
-            targetSets: sets,
-            targetReps: reps,
-            increment: increment,
-            startingWeight: progression().nextWeight,
-            lineageID: lineageID
-        )
-        successor.progressionRuleRaw = progressionRuleRaw
-        context.insert(successor)
-        successor.program = program
-        for entry in entries ?? [] {
-            entry.slot = successor
-        }
-        archivedAt = Date.now
-        return successor
-    }
 }

@@ -85,6 +85,68 @@ struct LoadingTests {
         #expect(DumbbellSet.standardKilograms.roundedDown(c.input) == c.down)
     }
 
+    // MARK: Snapping entered weights
+
+    struct SnapCase: Sendable, CustomTestStringConvertible {
+        let equipment: Equipment
+        let entered: Weight
+        let snapped: Weight
+        var testDescription: String { "\(equipment) \(entered) → \(snapped)" }
+    }
+
+    @Test(arguments: [
+        // Barbell: nearest loadable, ties up, never below the bar.
+        SnapCase(equipment: .barbell, entered: lb(135), snapped: lb(135)),
+        SnapCase(equipment: .barbell, entered: lb(136), snapped: lb(135)),
+        SnapCase(equipment: .barbell, entered: lb(137), snapped: lb(137.5)),
+        SnapCase(equipment: .barbell, entered: lb(136.25), snapped: lb(137.5)),
+        SnapCase(equipment: .barbell, entered: lb(184), snapped: lb(185)),
+        SnapCase(equipment: .barbell, entered: lb(44), snapped: lb(45)),
+        SnapCase(equipment: .barbell, entered: lb(0), snapped: lb(45)),
+        SnapCase(equipment: .barbell, entered: lb(-10), snapped: lb(45)),
+        SnapCase(equipment: .barbell, entered: kg(61.3), snapped: kg(61.5)),
+        SnapCase(equipment: .barbell, entered: kg(15), snapped: kg(20)),
+        // Dumbbells and machines aren't snapped, only kept non-negative.
+        SnapCase(equipment: .dumbbell, entered: lb(17), snapped: lb(17)),
+        SnapCase(equipment: .machine, entered: lb(47.3), snapped: lb(47.3)),
+        SnapCase(equipment: .machine, entered: lb(-5), snapped: lb(0)),
+    ])
+    func snapping(_ c: SnapCase) {
+        #expect(LoadingSettings.standard(for: c.entered.unit).snapped(c.entered, for: c.equipment) == c.snapped)
+    }
+
+    struct StepEntryCase: Sendable, CustomTestStringConvertible {
+        let equipment: Equipment
+        let from: Weight
+        let up: Bool
+        let to: Weight
+        var testDescription: String { "\(equipment) \(from) \(up ? "+" : "−") → \(to)" }
+    }
+
+    @Test(arguments: [
+        // Barbell: 5 lb steps, snapped, never below the bar.
+        StepEntryCase(equipment: .barbell, from: lb(135), up: true, to: lb(140)),
+        StepEntryCase(equipment: .barbell, from: lb(135), up: false, to: lb(130)),
+        StepEntryCase(equipment: .barbell, from: lb(137.5), up: false, to: lb(132.5)),
+        StepEntryCase(equipment: .barbell, from: lb(50), up: false, to: lb(45)),
+        StepEntryCase(equipment: .barbell, from: lb(45), up: false, to: lb(45)),
+        StepEntryCase(equipment: .barbell, from: kg(20), up: false, to: kg(20)),
+        StepEntryCase(equipment: .barbell, from: kg(60), up: true, to: kg(62.5)),
+        // Dumbbell: 2.5 lb under 20, 5 lb from 20.
+        StepEntryCase(equipment: .dumbbell, from: lb(17.5), up: true, to: lb(20)),
+        StepEntryCase(equipment: .dumbbell, from: lb(20), up: true, to: lb(25)),
+        StepEntryCase(equipment: .dumbbell, from: lb(25), up: false, to: lb(20)),
+        StepEntryCase(equipment: .dumbbell, from: lb(20), up: false, to: lb(17.5)),
+        StepEntryCase(equipment: .dumbbell, from: lb(2.5), up: false, to: lb(2.5)),
+        // Machine: 5 lb steps, never negative.
+        StepEntryCase(equipment: .machine, from: lb(120), up: true, to: lb(125)),
+        StepEntryCase(equipment: .machine, from: lb(5), up: false, to: lb(0)),
+        StepEntryCase(equipment: .machine, from: lb(0), up: false, to: lb(0)),
+    ])
+    func stepping(_ c: StepEntryCase) {
+        #expect(LoadingSettings.standard(for: c.from.unit).stepped(c.from, for: c.equipment, up: c.up) == c.to)
+    }
+
     // MARK: Formatting
 
     @Test(arguments: [

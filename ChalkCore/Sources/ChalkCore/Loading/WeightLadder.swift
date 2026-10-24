@@ -17,6 +17,13 @@ public protocol WeightLadder: Sendable {
 }
 
 extension WeightLadder {
+    /// The nearest loadable weight (ties go up). Never below `minimum`.
+    public func nearest(_ weight: Weight) -> Weight {
+        let above = roundedUp(weight)
+        guard let below = roundedDown(weight) else { return above }
+        return weight - below < above - weight ? below : above
+    }
+
     /// `weight` plus the larger of `increment` and the minimum increase, rounded up
     /// to the next loadable weight. Always at least the minimum increase heavier.
     public func increased(_ weight: Weight, by increment: Weight) -> Weight {
