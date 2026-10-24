@@ -34,6 +34,11 @@ extension Program {
         return (next.week, days[next.day])
     }
 
+    /// The in-progress session for `day` in `week`, if one has been started.
+    func inProgressSession(for day: ProgramDay, week: Int) -> WorkoutSession? {
+        session(for: day, week: week, status: .inProgress)
+    }
+
     /// Starts the session for `day` in `week`, or returns it if it's already in progress.
     @discardableResult
     func startSession(for day: ProgramDay, week: Int, in context: ModelContext) -> WorkoutSession {
@@ -128,5 +133,16 @@ extension ExerciseLog {
         context.insert(set)
         set.exerciseLog = self
         return set
+    }
+
+    /// Deletes a set and renumbers the ones after it.
+    func removeSet(_ set: SetLog, in context: ModelContext) {
+        let remaining = sortedSets.filter { $0.persistentModelID != set.persistentModelID }
+        // Detach first so `sets` is accurate before the delete is saved.
+        set.exerciseLog = nil
+        context.delete(set)
+        for (index, set) in remaining.enumerated() {
+            set.order = index
+        }
     }
 }

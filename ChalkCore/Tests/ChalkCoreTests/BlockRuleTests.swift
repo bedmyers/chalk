@@ -156,29 +156,45 @@ struct BlockRuleTests {
         var testDescription: String { name }
     }
 
+    // Increases are at least 5 lb / 2.5 kg, except dumbbells under 20 lb (2.5 lb steps).
     static let incrementScenarios: [IncrementScenario] = [
-        IncrementScenario(name: "lb barbell lower +5", start: lb(225), increment: lb(5),
+        // Barbell
+        IncrementScenario(name: "lb barbell +5", start: lb(225), increment: lb(5),
                           equipment: .barbell, expected: lb(230)),
-        IncrementScenario(name: "lb barbell upper +2.5", start: lb(135), increment: lb(2.5),
-                          equipment: .barbell, expected: lb(137.5)),
-        IncrementScenario(name: "kg barbell lower +2.5", start: kg(100), increment: kg(2.5),
+        IncrementScenario(name: "lb barbell +2.5 is raised to the 5 lb minimum", start: lb(185),
+                          increment: lb(2.5), equipment: .barbell, expected: lb(190)),
+        IncrementScenario(name: "lb barbell row +2.5 is raised to 5", start: lb(155),
+                          increment: lb(2.5), equipment: .barbell, expected: lb(160)),
+        IncrementScenario(name: "lb barbell off-ladder start still gains a full 5", start: lb(137.5),
+                          increment: lb(2.5), equipment: .barbell, expected: lb(142.5)),
+        IncrementScenario(name: "lb barbell increment above the minimum applies", start: lb(225),
+                          increment: lb(10), equipment: .barbell, expected: lb(235)),
+        IncrementScenario(name: "kg barbell +2.5", start: kg(100), increment: kg(2.5),
                           equipment: .barbell, expected: kg(102.5)),
-        IncrementScenario(name: "kg barbell upper +1.25 rounds up to +1.5", start: kg(60),
-                          increment: kg(1.25), equipment: .barbell, expected: kg(61.5)),
+        IncrementScenario(name: "kg barbell +1.25 is raised to the 2.5 kg minimum", start: kg(60),
+                          increment: kg(1.25), equipment: .barbell, expected: kg(62.5)),
+        // Dumbbell
         IncrementScenario(name: "lb dumbbell +2.5 under 20", start: lb(15), increment: lb(2.5),
                           equipment: .dumbbell, expected: lb(17.5)),
-        IncrementScenario(name: "lb dumbbell +2.5 at 20 rounds up to 25", start: lb(20),
+        IncrementScenario(name: "lb dumbbell +2.5 just under 20", start: lb(17.5), increment: lb(2.5),
+                          equipment: .dumbbell, expected: lb(20)),
+        IncrementScenario(name: "lb dumbbell +2.5 at 20 is raised to 5", start: lb(20),
                           increment: lb(2.5), equipment: .dumbbell, expected: lb(25)),
+        IncrementScenario(name: "lb dumbbell +2.5 above 20 is raised to 5", start: lb(60),
+                          increment: lb(2.5), equipment: .dumbbell, expected: lb(65)),
         IncrementScenario(name: "lb dumbbell +5 crossing 20", start: lb(17.5), increment: lb(5),
                           equipment: .dumbbell, expected: lb(25)),
         IncrementScenario(name: "kg dumbbell +1.25 above 10 rounds up to 12.5", start: kg(10),
                           increment: kg(1.25), equipment: .dumbbell, expected: kg(12.5)),
-        IncrementScenario(name: "lb machine +2.5 unrounded", start: lb(100), increment: lb(2.5),
-                          equipment: .machine, expected: lb(102.5)),
-        IncrementScenario(name: "lb machine odd +3 unrounded", start: lb(50), increment: lb(3),
-                          equipment: .machine, expected: lb(53)),
-        IncrementScenario(name: "kg machine +1.25 unrounded", start: kg(30), increment: kg(1.25),
-                          equipment: .machine, expected: kg(31.25)),
+        // Machine
+        IncrementScenario(name: "lb machine +2.5 is raised to 5", start: lb(120), increment: lb(2.5),
+                          equipment: .machine, expected: lb(125)),
+        IncrementScenario(name: "lb machine odd +7 applies unrounded", start: lb(50), increment: lb(7),
+                          equipment: .machine, expected: lb(57)),
+        IncrementScenario(name: "lb machine off-ladder start isn't rounded", start: lb(47.5),
+                          increment: lb(5), equipment: .machine, expected: lb(52.5)),
+        IncrementScenario(name: "kg machine +1.25 is raised to 2.5", start: kg(30), increment: kg(1.25),
+                          equipment: .machine, expected: kg(32.5)),
     ]
 
     @Test(arguments: incrementScenarios)

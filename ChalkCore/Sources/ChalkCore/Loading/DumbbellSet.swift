@@ -49,6 +49,12 @@ public struct DumbbellSet: WeightLadder, Hashable {
     public var unit: WeightUnit { tiers[0].start.unit }
     public var minimum: Weight { tiers[0].start }
 
+    /// One step of the tier `weight` is in: 2.5 lb under 20 lb, 5 lb from 20 lb up.
+    public func minimumIncrease(from weight: Weight) -> Weight {
+        guard weight >= minimum else { return tiers[0].step }
+        return tiers[tierIndex(containing: weight)].step
+    }
+
     public func roundedUp(_ weight: Weight) -> Weight {
         guard weight > minimum else { return minimum }
         let index = tierIndex(containing: weight)

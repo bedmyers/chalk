@@ -15,12 +15,13 @@ Decided (implemented in `ChalkCore`):
 - A block completes after 3 *completed* weeks. If all 3 were hits, the weight increases for the next block. Otherwise it stays the same.
 - **Auto-deload:** after 2 consecutive failed blocks on an exercise, drop its weight ~10% (rounded to the nearest loadable weight, always at least one step lighter, never below the minimum) and progress from there.
 - **Progression uses the prescribed weight.** Reps are judged against the target; the weight actually lifted is recorded but doesn't change the progression.
-- **Increments:** smart defaults (+5 lb / +2.5 kg lower body, +2.5 lb / +1.25 kg upper body), editable per exercise. Increases always **round up** to the next loadable weight (e.g. +1.25 kg on a barbell becomes +1.5 kg).
+- **Increments:** smart defaults (+5 lb / +2.5 kg lower body, +2.5 lb / +1.25 kg upper body), editable per exercise. Increases always **round up** to the next loadable weight.
+- **Minimum increase: 5 lb (2.5 kg) for every lift**, so an increment below that is raised to it (bench 185 → 190, not 187.5). **Exception: dumbbells under 20 lb** step by 2.5 lb (and 1 kg under 10 kg). In practice the +2.5 lb upper-body default only applies to light dumbbells. The 2.5 kg minimum is the assumed kg equivalent of 5 lb.
 - **Units:** lb and kg. Each program has its own unit; the app setting only sets the default for new programs and never converts existing ones.
 - **Equipment types** decide which weights are loadable:
-  - **Barbell:** bar plus plate pairs. Defaults: 45 lb bar with 45/35/25/10/5/2.5/1.25 lb plates; 20 kg bar with 25/20/15/10/5/2.5/1.25/0.5/0.25 kg plates.
+  - **Barbell:** bar plus plate pairs. Defaults: 45 lb bar with 45/35/25/10/5/2.5/1.25 lb plates; 20 kg bar with 25/20/15/10/5/2.5/1.25/0.5/0.25 kg plates. The small plates are still used for deloads and odd starting weights, never for an increase below the minimum.
   - **Dumbbell:** 2.5 lb steps up to 20 lb, then 5 lb steps. 1 kg steps up to 10 kg, then 2.5 kg steps (kg steps are an unconfirmed default).
-  - **Machine / cable:** no rounding; the raw increment is applied.
+  - **Machine / cable:** no rounding; the raw increment is applied (at least the 5 lb / 2.5 kg minimum).
   - The plate and dumbbell sets are stored as settings so they can be made editable later.
 - **Changing an exercise's targets** archives the slot and starts a successor from the current weight, so old weeks are never re-judged. Successors share a `lineageID` and are shown in the UI as one continuous exercise.
 
