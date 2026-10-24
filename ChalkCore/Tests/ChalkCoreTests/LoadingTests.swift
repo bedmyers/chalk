@@ -106,8 +106,18 @@ struct LoadingTests {
         SnapCase(equipment: .barbell, entered: lb(-10), snapped: lb(45)),
         SnapCase(equipment: .barbell, entered: kg(61.3), snapped: kg(61.5)),
         SnapCase(equipment: .barbell, entered: kg(15), snapped: kg(20)),
-        // Dumbbells and machines aren't snapped, only kept non-negative.
-        SnapCase(equipment: .dumbbell, entered: lb(17), snapped: lb(17)),
+        // Dumbbells: nearest in the rack, ties up, never below the lightest.
+        SnapCase(equipment: .dumbbell, entered: lb(17.5), snapped: lb(17.5)),
+        SnapCase(equipment: .dumbbell, entered: lb(17), snapped: lb(17.5)),
+        SnapCase(equipment: .dumbbell, entered: lb(16), snapped: lb(15)),
+        SnapCase(equipment: .dumbbell, entered: lb(22), snapped: lb(20)),
+        SnapCase(equipment: .dumbbell, entered: lb(22.5), snapped: lb(25)),
+        SnapCase(equipment: .dumbbell, entered: lb(63), snapped: lb(65)),
+        SnapCase(equipment: .dumbbell, entered: lb(1), snapped: lb(2.5)),
+        SnapCase(equipment: .dumbbell, entered: lb(0), snapped: lb(2.5)),
+        SnapCase(equipment: .dumbbell, entered: kg(11), snapped: kg(10)),
+        SnapCase(equipment: .dumbbell, entered: kg(7.4), snapped: kg(7)),
+        // Machines aren't snapped, only kept non-negative.
         SnapCase(equipment: .machine, entered: lb(47.3), snapped: lb(47.3)),
         SnapCase(equipment: .machine, entered: lb(-5), snapped: lb(0)),
     ])

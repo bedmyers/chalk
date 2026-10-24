@@ -10,6 +10,7 @@ import SwiftUI
 enum Route: Hashable {
     case program(Program)
     case day(ProgramDay)
+    case archivedPrograms
 }
 
 /// The app's navigation path, shared through the environment.

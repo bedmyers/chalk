@@ -18,6 +18,7 @@ struct ContentView: View {
                     switch route {
                     case .program(let program): ProgramView(program: program)
                     case .day(let day): DayView(day: day)
+                    case .archivedPrograms: ArchivedProgramsView()
                     }
                 }
         }

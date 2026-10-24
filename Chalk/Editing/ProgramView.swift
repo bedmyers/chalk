@@ -61,6 +61,7 @@ struct ProgramView: View {
 
             Section {
                 Button("Start a New Program") { isCreatingProgram = true }
+                NavigationLink("Archived Programs", value: Route.archivedPrograms)
                 Button("Archive Program") { isConfirmingArchive = true }
                 Button("Delete Program", role: .destructive) { isConfirmingDelete = true }
             }
