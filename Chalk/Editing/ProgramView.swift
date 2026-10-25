@@ -20,13 +20,8 @@ struct ProgramView: View {
     @State private var isCreatingProgram = false
     @State private var isConfirmingArchive = false
     @State private var isConfirmingDelete = false
-    /// Archive and delete run once this screen is gone, so it never renders a deleted program.
-    @State private var exitAction: ExitAction?
-
-    private enum ExitAction {
-        case archive
-        case delete
-    }
+    /// Hard delete runs once this screen is gone, so it never renders a deleted program.
+    @State private var isDeletingOnDisappear = false
 
     var body: some View {
         List {
@@ -103,27 +98,26 @@ struct ProgramView: View {
             Text("\(day.name) has a workout in progress. Finish or skip it before deleting the day.")
         }
         .confirmationDialog("Archive \(program.name)?", isPresented: $isConfirmingArchive, titleVisibility: .visible) {
-            Button("Archive Program") { leave(then: .archive) }
+            Button("Archive Program") { archive() }
         } message: {
             Text("Its history is kept, and archived programs can be restored later.")
         }
         .confirmationDialog("Delete \(program.name)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
-            Button("Delete Program and History", role: .destructive) { leave(then: .delete) }
+            Button("Delete Program and History", role: .destructive) { delete() }
         } message: {
             Text("This permanently deletes the program and every workout logged with it. Archive it instead to keep the history.")
         }
         .sheet(isPresented: $isCreatingProgram) {
-            NewProgramSheet(replacing: program) { newProgram in
-                router.path = [.program(newProgram)]
+            NewProgramSheet(replacing: program) { _ in
+                // The Program tab's root now shows the new active program.
+                router.programPath.removeAll()
             }
         }
         .onDisappear {
-            switch exitAction {
-            case .archive: program.archive()
-            case .delete: modelContext.delete(program)
-            case nil: break
+            if isDeletingOnDisappear {
+                modelContext.delete(program)
+                isDeletingOnDisappear = false
             }
-            exitAction = nil
         }
     }
 
@@ -148,10 +142,17 @@ struct ProgramView: View {
         return "\(names) \(verb) on any other day, so \(pronoun) be archived. Past workouts are kept."
     }
 
-    /// Pops back to Today, then archives or deletes once this screen is gone.
-    private func leave(then action: ExitAction) {
-        exitAction = action
-        router.path.removeAll()
+    /// Archiving takes the program out of the active query, so the Program tab's
+    /// root switches to the "no program" state by itself.
+    private func archive() {
+        router.programPath.removeAll()
+        program.archive()
+    }
+
+    /// Archives first so this screen goes away, then hard-deletes once it's gone.
+    private func delete() {
+        isDeletingOnDisappear = true
+        archive()
     }
 
     private func isPresent<Item>(_ item: Binding<Item?>) -> Binding<Bool> {

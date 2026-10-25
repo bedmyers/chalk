@@ -30,6 +30,7 @@ struct TodayWorkoutView: View {
     let program: Program
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(Router.self) private var router
     @State private var isConfirmingSkip = false
     @State private var setTaps = 0
     @State private var celebration: Celebration?
@@ -46,15 +47,8 @@ struct TodayWorkoutView: View {
                 workout(TodayPlan(program: program, day: next.day, week: next.week))
             } else {
                 EmptyStateView(title: "No days yet", message: "Add a day to \(program.name) to get started.") {
-                    NavigationLink("Add Days", value: Route.program(program))
+                    Button("Add Days") { router.showProgram() }
                         .buttonStyle(.chalkPrimary)
-                }
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: Route.program(program)) {
-                    Label("Edit Program", systemImage: "slider.horizontal.3")
                 }
             }
         }
@@ -182,8 +176,10 @@ struct NoProgramView: View {
                 .buttonStyle(.chalkPrimary)
 
                 if !archivedPrograms.isEmpty {
-                    NavigationLink("Restore an Archived Program", value: Route.archivedPrograms)
-                        .buttonStyle(.chalkSecondary)
+                    Button("Restore an Archived Program") {
+                        router.showProgram(.archivedPrograms)
+                    }
+                    .buttonStyle(.chalkSecondary)
                 }
 
                 #if DEBUG
@@ -195,8 +191,9 @@ struct NoProgramView: View {
             }
         }
         .sheet(isPresented: $isCreatingProgram) {
-            NewProgramSheet(replacing: nil) { program in
-                router.path = [.program(program)]
+            NewProgramSheet(replacing: nil) { _ in
+                // The Program tab's root shows the new active program.
+                router.showProgram()
             }
         }
     }
