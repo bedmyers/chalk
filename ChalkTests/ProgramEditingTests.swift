@@ -134,6 +134,48 @@ struct ProgramEditingTests {
         #expect(ProgramLibrary.activePrograms(in: context) == [old])
     }
 
+    @Test func archivedProgramsAreListedNewestFirst() throws {
+        let (first, _) = try makeProgram()
+        first.archivedAt = Date(timeIntervalSinceNow: -3600)
+        let second = ProgramLibrary.createProgram(named: "5x5", unit: .pounds, in: context)
+        second.archivedAt = Date.now
+
+        #expect(ProgramLibrary.archivedPrograms(in: context) == [second, first])
+        #expect(ProgramLibrary.activePrograms(in: context).isEmpty)
+    }
+
+    @Test func restoringWithNoActiveProgram() throws {
+        let (program, _) = try makeProgram()
+        program.archive()
+
+        program.restore(in: context)
+
+        #expect(ProgramLibrary.activePrograms(in: context) == [program])
+        #expect(ProgramLibrary.archivedPrograms(in: context).isEmpty)
+    }
+
+    @Test func restoredProgramPicksUpWhereItLeftOff() throws {
+        let (program, days) = try makeProgram()
+        let bench = try slot(named: "Bench Press", in: program)
+        for week in 1...3 {
+            let session = program.startSession(for: days[0], week: week, in: context)
+            for log in session.sortedExerciseLogs {
+                for _ in 0..<log.targetSets { log.logSet(reps: log.targetReps, in: context) }
+            }
+            session.complete()
+        }
+        program.skip(days[1], week: 3, in: context)
+
+        ProgramLibrary.createProgram(named: "5x5", unit: .pounds, in: context)
+        program.restore(in: context)
+
+        #expect(bench.progression().nextWeight == .pounds(190))
+        #expect(program.nextWorkout()?.week == 1)
+        #expect(program.nextWorkout()?.day == days[1])
+        // Skipped days aren't counted as workouts.
+        #expect(program.completedWorkoutCount == 3)
+    }
+
     // MARK: Days
 
     @Test func addingAndReorderingDays() throws {

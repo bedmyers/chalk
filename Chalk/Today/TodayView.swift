@@ -163,6 +163,9 @@ struct TodayWorkoutView: View {
 
 /// Shown when there's no active program.
 struct NoProgramView: View {
+    @Query(filter: #Predicate<Program> { $0.archivedAt != nil })
+    private var archivedPrograms: [Program]
+
     @Environment(\.modelContext) private var modelContext
     @Environment(Router.self) private var router
     @State private var isCreatingProgram = false
@@ -177,6 +180,11 @@ struct NoProgramView: View {
                     isCreatingProgram = true
                 }
                 .buttonStyle(.chalkPrimary)
+
+                if !archivedPrograms.isEmpty {
+                    NavigationLink("Restore an Archived Program", value: Route.archivedPrograms)
+                        .buttonStyle(.chalkSecondary)
+                }
 
                 #if DEBUG
                 Button("Load Sample Program") {

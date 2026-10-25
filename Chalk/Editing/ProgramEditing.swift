@@ -21,6 +21,15 @@ nonisolated enum ProgramLibrary {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Archived programs, most recently archived first.
+    static func archivedPrograms(in context: ModelContext) -> [Program] {
+        let descriptor = FetchDescriptor<Program>(
+            predicate: #Predicate { $0.archivedAt != nil },
+            sortBy: [SortDescriptor(\.archivedAt, order: .reverse)]
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
     /// Creates a program and archives the active one, so only one is ever active.
     @discardableResult
     static func createProgram(named name: String, unit: WeightUnit, in context: ModelContext) -> Program {
@@ -45,6 +54,11 @@ extension Program {
             program.archive()
         }
         archivedAt = nil
+    }
+
+    /// Workouts completed in this program, not counting skipped days.
+    var completedWorkoutCount: Int {
+        (sessions ?? []).filter { $0.status == .completed }.count
     }
 
     /// Exercise slots still in use.

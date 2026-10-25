@@ -7,8 +7,9 @@ import ChalkCore
 import SwiftData
 import SwiftUI
 
-/// Creates or edits an exercise. Barbell weights snap to loadable values and never
-/// go below the bar. Edits that restart the block ask first.
+/// Creates or edits an exercise. Barbell and dumbbell weights snap to loadable
+/// values and never go below the bar or the lightest dumbbell. Edits that
+/// restart the block ask first.
 struct ExerciseSheet: View {
     let target: ExerciseEditorTarget
     let unit: WeightUnit
@@ -87,8 +88,12 @@ struct ExerciseSheet: View {
 
     private var weightHint: String? {
         guard let entered = enteredWeight, let resolved = resolvedWeight, entered != resolved else { return nil }
-        if spec.equipment == .barbell, entered < loading.plates.bar {
-            return "The empty bar is \(loading.plates.bar), so that's the lightest it can go."
+        if entered < ladder.minimum {
+            switch spec.equipment {
+            case .barbell: return "The empty bar is \(ladder.minimum), so that's the lightest it can go."
+            case .dumbbell: return "The lightest dumbbell is \(ladder.minimum)."
+            case .machine: break
+            }
         }
         return "Rounds to \(resolved), the nearest weight you can load."
     }

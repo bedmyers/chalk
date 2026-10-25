@@ -34,12 +34,14 @@ public struct LoadingSettings: Sendable, Hashable {
     public var unit: WeightUnit { plates.unit }
 
     /// A weight the user entered, adjusted to what can actually be set up.
-    /// Barbell weights snap to the nearest loadable weight (ties go up) and never
-    /// go below the bar. Other equipment is only kept from going negative.
+    /// Barbells and dumbbells snap to the nearest loadable weight (ties go up) and
+    /// never go below the bar or the lightest dumbbell. Machines are only kept
+    /// from going negative, since stacks vary too much to model.
     public func snapped(_ weight: Weight, for equipment: Equipment) -> Weight {
         switch equipment {
         case .barbell: plates.nearest(weight)
-        case .dumbbell, .machine: max(weight, Weight(thousandths: 0, unit: weight.unit))
+        case .dumbbell: dumbbells.nearest(weight)
+        case .machine: max(weight, Weight(thousandths: 0, unit: weight.unit))
         }
     }
 
