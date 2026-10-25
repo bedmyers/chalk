@@ -4,6 +4,7 @@
 //
 
 import ChalkCore
+import Foundation
 import SwiftData
 
 /// One exercise as shown on the Today screen.
@@ -15,7 +16,7 @@ struct PlannedExercise: Identifiable {
     let weight: Weight
     let sets: [SetLog]
 
-    var id: PersistentIdentifier { slot.persistentModelID }
+    var id: UUID { slot.id }
 }
 
 /// Today's workout. Once a session is started its snapshot is shown, so the

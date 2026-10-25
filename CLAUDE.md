@@ -25,6 +25,7 @@ Decided (implemented in `ChalkCore`):
   - The plate and dumbbell sets are stored as settings so they can be made editable later.
 - **Editing an exercise:** changing sets, reps, increment, equipment, or the current weight archives the slot and starts a successor at the (possibly edited) weight with a fresh 3-week count, so old weeks are never re-judged. The editor warns first ("This restarts your 3-week count"). Name and body region edit in place. Successors share a `lineageID` and are shown in the UI as one continuous exercise.
 - **Weight entry:** barbell and dumbbell weights snap to the nearest loadable weight (shown to the user) and never go below the bar or the lightest dumbbell. Machine weights aren't snapped. ± buttons step by the lift's minimum increase.
+- **Editing finished workouts:** reps, weight lifted, adding a missed set, and deleting a set are allowed. Because weights are replayed from history, an edit can change a current weight; the editor previews the edit against the engine first and asks before saving, naming each change (e.g. "Bench Press 190 → 185 lb"). Edits to an archived slot's history change nothing current.
 - **Programs:** one active program at a time; creating a new one archives the current one after confirmation. Archived programs keep their history and can be restored. Day edits (add, remove, reorder) apply to the current training week immediately. A day with a workout in progress can't be deleted; deleting a day archives exercises that are on no other day.
 
 Open (don't implement until decided; ask if a task depends on one):
@@ -44,6 +45,7 @@ Open (don't implement until decided; ask if a task depends on one):
 - **`ChalkCore`** (local Swift package): the progression engine, plate math, and value types. It must not import SwiftUI or SwiftData. Types are `Sendable` structs and enums, nonisolated. All engine tests live here so they run without a simulator.
 - **App target**: SwiftData `@Model` types, views, and app wiring. The app converts `@Model` data into ChalkCore value snapshots before calling the engine; never pass `@Model` objects into ChalkCore.
 - `@Model` objects and `ModelContext` aren't `Sendable`. Keep them on the main actor. For background work, use `@ModelActor` and pass `PersistentIdentifier`s.
+- **Don't hold on to `persistentModelID`** (in drafts, navigation routes, sheet items, or `ForEach` ids). A new object's ID is temporary and changes when it's first saved. Use the model's stable `id: UUID` instead. Comparing two `persistentModelID`s read at the same moment is fine.
 
 ## SwiftData + CloudKit model rules
 

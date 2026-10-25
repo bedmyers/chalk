@@ -7,9 +7,14 @@
 
 #if DEBUG
 import ChalkCore
+import Foundation
 import SwiftData
 
 enum SampleData {
+    /// Launch argument that starts the app with the sample program and three
+    /// weeks of history in memory. For UI tests.
+    static let sampleHistoryLaunchArgument = "-ChalkSampleHistory"
+
     private struct SampleExercise {
         let name: String
         let equipment: Equipment
@@ -69,13 +74,38 @@ enum SampleData {
         return program
     }
 
-    /// An in-memory container with the sample program. `setsLogged` starts the
-    /// first day and logs those reps on its main lift.
-    static func previewContainer(setsLogged: [Int] = []) -> ModelContainer {
+    /// Logs `weeks` training weeks of the sample program in the past, two days apart.
+    /// Every set hits except bench in week 5, so history has a bump and a held block.
+    static func insertHistory(weeks: Int, for program: Program, into context: ModelContext) {
+        guard weeks > 0 else { return }
+        let days = program.sortedDays
+        let gap: TimeInterval = 2 * 86_400
+        var date = Date.now.addingTimeInterval(-gap * Double(weeks * days.count + 1))
+        for week in 1...weeks {
+            for day in days {
+                let session = program.startSession(for: day, week: week, in: context)
+                for log in session.sortedExerciseLogs {
+                    for index in 0..<log.targetSets {
+                        let short = week == 5 && log.exerciseName == "Bench Press" && index == log.targetSets - 1
+                        log.logSet(reps: short ? log.targetReps - 2 : log.targetReps, in: context)
+                    }
+                }
+                session.complete()
+                session.startedAt = date
+                session.completedAt = date
+                date = date.addingTimeInterval(gap)
+            }
+        }
+    }
+
+    /// An in-memory container with the sample program. `completedWeeks` adds past
+    /// workouts; `setsLogged` starts the next day and logs those reps on its main lift.
+    static func previewContainer(completedWeeks: Int = 0, setsLogged: [Int] = []) -> ModelContainer {
         do {
             let container = try ChalkModelContainer.make(inMemory: true)
             let context = container.mainContext
             let program = insertProgram(into: context)
+            insertHistory(weeks: completedWeeks, for: program, into: context)
             if !setsLogged.isEmpty, let day = program.sortedDays.first {
                 let session = program.startSession(for: day, week: 1, in: context)
                 if let log = session.sortedExerciseLogs.first {

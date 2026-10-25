@@ -12,10 +12,11 @@ enum ExerciseEditorTarget: Identifiable {
     case new(ProgramDay)
     case existing(ExerciseSlot)
 
-    var id: PersistentIdentifier {
+    /// Stable across saves, so the sheet isn't torn down when SwiftData autosaves.
+    var id: UUID {
         switch self {
-        case .new(let day): day.persistentModelID
-        case .existing(let slot): slot.persistentModelID
+        case .new(let day): day.id
+        case .existing(let slot): slot.id
         }
     }
 }

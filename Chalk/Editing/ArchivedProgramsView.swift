@@ -54,7 +54,8 @@ struct ArchivedProgramsView: View {
         ) { program in
             Button("Restore") {
                 program.restore(in: modelContext)
-                router.path.removeAll()
+                // Back to the Program tab's root, which now shows the restored program.
+                router.programPath.removeAll()
             }
         } message: { _ in
             if let current = active.first {
