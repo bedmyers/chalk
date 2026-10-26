@@ -69,13 +69,23 @@ extension SchemaV1 {
         var prescribedUnitRaw: String = WeightUnit.pounds.rawValue
         var targetSets: Int = 0
         var targetReps: Int = 0
+        /// Snapshot of the slot's catalog link, kept even if the slot is deleted.
+        var catalogID: String? = nil
         var session: WorkoutSession?
         var slot: ExerciseSlot?
 
         @Relationship(deleteRule: .cascade, inverse: \SetLog.exerciseLog)
         var sets: [SetLog]? = []
 
-        init(order: Int, exerciseName: String, prescribedWeight: Weight, targetSets: Int, targetReps: Int) {
+        init(
+            order: Int,
+            exerciseName: String,
+            prescribedWeight: Weight,
+            targetSets: Int,
+            targetReps: Int,
+            catalogID: String? = nil
+        ) {
+            self.catalogID = catalogID
             self.order = order
             self.exerciseName = exerciseName
             self.prescribedWeightThousandths = prescribedWeight.thousandths

@@ -108,7 +108,8 @@ extension Program {
                 exerciseName: slot.name,
                 prescribedWeight: weight,
                 targetSets: slot.targetSets,
-                targetReps: slot.targetReps
+                targetReps: slot.targetReps,
+                catalogID: slot.catalogID
             )
             context.insert(log)
             log.session = session

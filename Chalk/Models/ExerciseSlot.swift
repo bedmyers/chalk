@@ -37,6 +37,9 @@ extension SchemaV1 {
         var incrementThousandths: Int = 0
         var startingWeightThousandths: Int = 0
         var progressionRuleRaw: String = ProgressionRuleKind.threeWeekBlock.rawValue
+        /// The built-in lift this is (`CatalogExercise.id`), or nil for a custom one.
+        /// Powers exercise info and substitution suggestions.
+        var catalogID: String? = nil
         var createdAt: Date = Date.now
         var archivedAt: Date? = nil
         var program: Program?
@@ -56,8 +59,10 @@ extension SchemaV1 {
             targetReps: Int,
             increment: Weight,
             startingWeight: Weight,
-            lineageID: UUID = UUID()
+            lineageID: UUID = UUID(),
+            catalogID: String? = nil
         ) {
+            self.catalogID = catalogID
             self.name = name
             self.equipmentRaw = equipment.rawValue
             self.bodyRegionRaw = bodyRegion.rawValue

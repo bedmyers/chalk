@@ -131,7 +131,8 @@ extension Program {
             targetSets: spec.targetSets,
             targetReps: spec.targetReps,
             increment: spec.increment,
-            startingWeight: spec.weight
+            startingWeight: spec.weight,
+            catalogID: spec.resolvedCatalogID
         )
         context.insert(slot)
         slot.program = self
@@ -191,7 +192,8 @@ extension ExerciseSlot {
             targetSets: targetSets,
             targetReps: targetReps,
             increment: increment,
-            weight: progression().nextWeight
+            weight: progression().nextWeight,
+            catalogID: catalogID
         )
     }
 
@@ -202,6 +204,7 @@ extension ExerciseSlot {
         guard edited.restartsBlock(comparedTo: spec) else {
             name = edited.trimmedName
             bodyRegion = edited.bodyRegion
+            catalogID = edited.resolvedCatalogID
             return self
         }
         return restart(with: edited, in: context)
@@ -220,7 +223,8 @@ extension ExerciseSlot {
             targetReps: spec.targetReps,
             increment: spec.increment,
             startingWeight: spec.weight,
-            lineageID: lineageID
+            lineageID: lineageID,
+            catalogID: spec.resolvedCatalogID
         )
         successor.progressionRuleRaw = progressionRuleRaw
         context.insert(successor)

@@ -55,6 +55,8 @@ CloudKit is enabled, so every `@Model` must follow these rules or the container 
 - Every stored property has a default value or is optional
 - Every relationship is optional
 - Prefer additive schema changes. Once the schema is deployed to production (first TestFlight), fields can't be renamed or deleted, so flag any model change that would be painful after shipping.
+- After any model change, push the schema to CloudKit development with the DEBUG launch argument `-ChalkInitializeCloudKitSchema`, then deploy to production in CloudKit Console (see `docs/testflight-checklist.md`).
+- `catalogID` on `ExerciseSlot` and `ExerciseLog` stores `CatalogExercise.id`. Catalog IDs are permanent: never change or reuse one. Display names can change.
 
 ## Architecture
 
@@ -121,5 +123,7 @@ CloudKit is enabled, so every `@Model` must follow these rules or the container 
 - AI features: natural-language/voice set logging, a program builder via questionnaire, a stall coach that explains failed blocks, and a chat grounded in the user's log data
   - Set logging uses Apple's on-device Foundation Models (guided generation), with manual logging as the fallback on unsupported devices
   - Program builder, stall coach, and chat use the Claude API through a backend proxy. **Never put an API key in the app.**
+- **Exercise info:** a button on each exercise showing how to do it, with a picture or animation of the movement. Mostly content (instructions plus licensed or custom images), keyed by `catalogID`.
+- **Exercise substitution:** swap an exercise (e.g. missing equipment) with suggested alternatives. Rule-based first, using catalog metadata (movement pattern, equipment); AI for unusual cases later. A swap works like an exercise edit: a successor slot in the same lineage with a fresh block.
 - Rest timer as a Live Activity, HealthKit writes, Apple Watch app
 - Cardio / triathlon tracking
