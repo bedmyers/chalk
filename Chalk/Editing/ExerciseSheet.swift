@@ -137,7 +137,7 @@ struct ExerciseSheet: View {
                 }
             } message: {
                 if let resolvedSpec {
-                    Text("\(resolvedSpec.trimmedName) starts a fresh block at \(resolvedSpec.weight). Past workouts are kept.")
+                    Text("\(resolvedSpec.trimmedName) starts a fresh block at \(resolvedSpec.weight.description). Past workouts are kept.")
                 }
             }
             .onChange(of: spec.bodyRegion) {

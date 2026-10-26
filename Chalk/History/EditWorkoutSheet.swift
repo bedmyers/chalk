@@ -41,7 +41,7 @@ struct EditWorkoutSheet: View {
                     } header: {
                         Text(exercise.name)
                     } footer: {
-                        Text("Prescribed \(exercise.prescribedWeight) · \(exercise.targetSets) × \(exercise.targetReps)")
+                        Text("Prescribed \(exercise.prescribedWeight.description) · \(exercise.targetSets) × \(exercise.targetReps)")
                     }
                 }
             }

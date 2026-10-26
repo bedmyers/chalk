@@ -48,7 +48,7 @@ enum ChalkModelContainer {
     /// containers don't sync and are for tests and previews.
     static func make(inMemory: Bool = false) throws -> ModelContainer {
         let schema = Schema(versionedSchema: SchemaV1.self)
-        let configuration = if inMemory {
+        var configuration = if inMemory {
             ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         } else {
             ModelConfiguration(schema: schema, cloudKitDatabase: .private(cloudKitContainerID))
@@ -56,6 +56,9 @@ enum ChalkModelContainer {
         #if DEBUG
         if !inMemory, ProcessInfo.processInfo.arguments.contains(initializeCloudKitSchemaArgument) {
             try initializeCloudKitSchema(storeURL: configuration.url)
+            // Core Data keeps the real store for this run, so the app gets a blank
+            // in-memory one. Relaunch without the argument to see your data again.
+            configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         }
         #endif
         return try ModelContainer(
@@ -71,33 +74,32 @@ enum ChalkModelContainer {
     /// CloudKit Console. It blocks syncing while it runs, so it's never automatic.
     static let initializeCloudKitSchemaArgument = "-ChalkInitializeCloudKitSchema"
 
+    /// Kept alive for the rest of the run. Removing its store while CloudKit
+    /// mirroring is still working crashes ("…has no persistent stores…").
+    private static var schemaContainer: NSPersistentCloudKitContainer?
+
     /// Uploads representative records for every model so CloudKit learns each record
     /// type and field, then removes them. SwiftData has no API for this, so it goes
-    /// through Core Data's CloudKit container on the same store file, and unloads it
-    /// before SwiftData opens the store.
+    /// through Core Data's CloudKit container on the same store file.
     private static func initializeCloudKitSchema(storeURL: URL) throws {
-        try autoreleasepool {
-            let description = NSPersistentStoreDescription(url: storeURL)
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: cloudKitContainerID
-            )
-            description.shouldAddStoreAsynchronously = false
+        let description = NSPersistentStoreDescription(url: storeURL)
+        description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+            containerIdentifier: cloudKitContainerID
+        )
+        description.shouldAddStoreAsynchronously = false
 
-            guard let model = NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.models) else {
-                throw CocoaError(.coderInvalidValue)
-            }
-            let container = NSPersistentCloudKitContainer(name: "Chalk", managedObjectModel: model)
-            container.persistentStoreDescriptions = [description]
-            var loadError: Error?
-            container.loadPersistentStores { _, error in loadError = error }
-            if let loadError { throw loadError }
-
-            try container.initializeCloudKitSchema()
-
-            if let store = container.persistentStoreCoordinator.persistentStores.first {
-                try container.persistentStoreCoordinator.remove(store)
-            }
+        guard let model = NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.models) else {
+            throw CocoaError(.coderInvalidValue)
         }
+        let container = NSPersistentCloudKitContainer(name: "Chalk", managedObjectModel: model)
+        container.persistentStoreDescriptions = [description]
+        var loadError: Error?
+        container.loadPersistentStores { _, error in loadError = error }
+        if let loadError { throw loadError }
+
+        try container.initializeCloudKitSchema()
+        schemaContainer = container
+        print("Chalk: CloudKit schema uploaded to the development environment.")
     }
     #endif
 }
