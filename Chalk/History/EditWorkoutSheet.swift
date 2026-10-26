@@ -29,7 +29,7 @@ struct EditWorkoutSheet: View {
                 ForEach($draft.exercises) { $exercise in
                     Section {
                         ForEach($exercise.sets) { $set in
-                            SetEditRow(set: $set, targetReps: exercise.targetReps)
+                            SetEditRow(set: $set, targetReps: exercise.targetReps, isWeighted: exercise.isWeighted)
                                 .chalkRow()
                         }
                         .onDelete { exercise.sets.remove(atOffsets: $0) }
@@ -41,7 +41,7 @@ struct EditWorkoutSheet: View {
                     } header: {
                         Text(exercise.name)
                     } footer: {
-                        Text("Prescribed \(exercise.prescribedWeight.description) · \(exercise.targetSets) × \(exercise.targetReps)")
+                        Text("Prescribed \(exercise.isWeighted ? exercise.prescribedWeight.description : WeightLabel.bodyweight) · \(exercise.targetSets) × \(exercise.targetReps)")
                     }
                 }
             }
@@ -87,17 +87,20 @@ struct EditWorkoutSheet: View {
 private struct SetEditRow: View {
     @Binding var set: SetDraft
     let targetReps: Int
+    let isWeighted: Bool
 
     var body: some View {
         HStack(spacing: 12) {
-            TextField("Weight", value: weightValue, format: .number)
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .foregroundStyle(Theme.Colors.weight)
-                .frame(width: 72)
-                .accessibilityLabel("Weight lifted")
-            Text(set.weight.unit.symbol)
-                .foregroundStyle(Theme.Colors.textSecondary)
+            if isWeighted {
+                TextField("Weight", value: weightValue, format: .number)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(Theme.Colors.weight)
+                    .frame(width: 72)
+                    .accessibilityLabel("Weight lifted")
+                Text(set.weight.unit.symbol)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
             Stepper(value: $set.reps, in: 0...50) {
                 Text("\(set.reps) reps")
                     .foregroundStyle(set.reps >= targetReps ? Theme.Colors.done : Theme.Colors.textPrimary)

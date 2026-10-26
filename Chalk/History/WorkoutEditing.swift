@@ -35,6 +35,8 @@ nonisolated struct ExerciseDraft: Identifiable, Equatable, Sendable {
     let targetReps: Int
     let prescribedWeight: Weight
     var sets: [SetDraft]
+    /// False for bodyweight lifts, which show "BW" instead of a weight.
+    var isWeighted = true
 
     var id: UUID { logID }
 
@@ -56,14 +58,27 @@ nonisolated struct WorkoutDraft: Equatable, Sendable {
     }
 }
 
-/// A current weight an edit would change, e.g. "Bench Press 190 → 185 lb".
+/// A current weight an edit would change, e.g. "Bench Press 190 → 185 lb", or a
+/// bodyweight lift's reps, e.g. "Pull-Up 7/9/11 → 6/8/10 reps".
 nonisolated struct WeightChange: Equatable, Sendable, CustomStringConvertible {
     let exerciseName: String
-    let from: Weight
-    let to: Weight
+    let from: String
+    let to: String
+
+    init(exerciseName: String, from: Weight, to: Weight) {
+        self.exerciseName = exerciseName
+        self.from = from.formattedValue
+        self.to = to.description
+    }
+
+    init(exerciseName: String, fromReps: String, toReps: String) {
+        self.exerciseName = exerciseName
+        self.from = fromReps
+        self.to = "\(toReps) reps"
+    }
 
     var description: String {
-        "\(exerciseName) \(from.formattedValue) → \(to)"
+        "\(exerciseName) \(from) → \(to)"
     }
 }
 
@@ -78,7 +93,8 @@ extension WorkoutSession {
                 prescribedWeight: log.prescribedWeight,
                 sets: log.sortedSets.map { set in
                     SetDraft(reps: set.reps, weight: set.weight, existing: set.id)
-                }
+                },
+                isWeighted: log.slot?.equipment.isWeighted ?? true
             )
         })
     }
@@ -92,10 +108,20 @@ extension WorkoutSession {
             .compactMap(\.slot)
             .filter { !$0.isArchived && seen.insert($0.persistentModelID).inserted }
             .compactMap { slot in
-                let before = slot.progression().nextWeight
-                let after = slot.progression(overriding: overrides).nextWeight
-                guard before != after else { return nil }
-                return WeightChange(exerciseName: slot.name, from: before, to: after)
+                let before = slot.progression()
+                let after = slot.progression(overriding: overrides)
+                if before.nextWeight != after.nextWeight {
+                    return WeightChange(exerciseName: slot.name, from: before.nextWeight, to: after.nextWeight)
+                }
+                // Bodyweight lifts progress by reps instead.
+                if before.extraReps != after.extraReps {
+                    return WeightChange(
+                        exerciseName: slot.name,
+                        fromReps: slot.repsText(extraReps: before.extraReps),
+                        toReps: slot.repsText(extraReps: after.extraReps)
+                    )
+                }
+                return nil
             }
     }
 

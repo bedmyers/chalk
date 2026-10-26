@@ -43,6 +43,11 @@ struct ExerciseCard: View {
 
     private var targetText: String { "\(exercise.targetSets) × \(exercise.targetReps)" }
 
+    /// The weight, or "BW" for bodyweight lifts.
+    private var weightText: String {
+        exercise.isWeighted ? exercise.weight.formattedValue : WeightLabel.bodyweight
+    }
+
     private var featuredHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
@@ -53,14 +58,16 @@ struct ExerciseCard: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(exercise.weight.formattedValue)
+                Text(weightText)
                     .font(Theme.Fonts.heroWeight)
                     .foregroundStyle(Theme.Colors.weight)
                     .popShadow()
-                Text(exercise.weight.unit.symbol)
-                    .font(Theme.Fonts.unit)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                if exercise.isWeighted {
+                    Text(exercise.weight.unit.symbol)
+                        .font(Theme.Fonts.unit)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                }
             }
             .lineLimit(1)
             .minimumScaleFactor(0.5)
@@ -77,11 +84,11 @@ struct ExerciseCard: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             Spacer()
-            Text(exercise.weight.formattedValue)
+            Text(weightText)
                 .font(Theme.Fonts.rowWeight)
                 .foregroundStyle(Theme.Colors.weight)
                 .lineLimit(1)
-                .accessibilityLabel(exercise.weight.description)
+                .accessibilityLabel(exercise.isWeighted ? exercise.weight.description : "Bodyweight")
         }
     }
 

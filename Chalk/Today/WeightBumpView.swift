@@ -34,9 +34,7 @@ struct WeightBumpView: View {
                         bumpRow(bump)
                     }
 
-                    Text(bumps.count == 1
-                         ? "Three weeks, every rep. Grab a bigger plate."
-                         : "Three weeks, every rep. Grab bigger plates.")
+                    Text(closingLine)
                         .font(Theme.Fonts.body)
                         .foregroundStyle(Theme.Colors.textPrimary)
                 }
@@ -68,31 +66,47 @@ struct WeightBumpView: View {
         }
     }
 
+    private var closingLine: String {
+        let weighted = bumps.filter { if case .weight = $0.change { true } else { false } }.count
+        if weighted == 0 { return "Three weeks, every rep. One more rep, every week." }
+        return weighted == 1
+            ? "Three weeks, every rep. Grab a bigger plate."
+            : "Three weeks, every rep. Grab bigger plates."
+    }
+
     private func bumpRow(_ bump: WeightBump) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let (from, to, unit, spoken) = switch bump.change {
+        case .weight(let from, let to):
+            (from.formattedValue, to.formattedValue, Optional(to.unit.symbol), "\(from.description) to \(to.description)")
+        case .reps(let from, let to):
+            (from, to, Optional<String>.none, "\(from) reps to \(to) reps")
+        }
+        return VStack(alignment: .leading, spacing: 4) {
             Text(bump.exerciseName).exerciseNameStyle()
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(bump.from.formattedValue)
+                Text(from)
                     .foregroundStyle(Theme.Colors.textSecondary)
                 Image(systemName: "arrow.right")
                     .font(Theme.Fonts.unit)
                     .foregroundStyle(Theme.Colors.textPrimary)
-                Text(bump.to.formattedValue)
+                Text(to)
                     .foregroundStyle(Theme.Colors.weight)
                     .popShadow(Theme.Colors.action)
                     .scaleEffect(isRevealed || reduceMotion ? 1 : 0.3, anchor: .bottomLeading)
                     .opacity(isRevealed ? 1 : 0)
-                Text(bump.to.unit.symbol)
-                    .font(Theme.Fonts.unit)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                if let unit {
+                    Text(unit)
+                        .font(Theme.Fonts.unit)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                }
             }
             .font(Theme.Fonts.screenTitle)
             .lineLimit(1)
             .minimumScaleFactor(0.4)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(bump.exerciseName) up from \(bump.from.description) to \(bump.to.description)")
+        .accessibilityLabel("\(bump.exerciseName) up from \(spoken)")
     }
 }
 
@@ -109,6 +123,13 @@ struct WeightBumpView: View {
         WeightBump(exerciseName: "Bench Press", from: .pounds(185), to: .pounds(190)),
         WeightBump(exerciseName: "Overhead Press", from: .pounds(115), to: .pounds(120)),
         WeightBump(exerciseName: "Incline DB Press", from: .pounds(60), to: .pounds(65)),
+    ], onDismiss: {})
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Bodyweight") {
+    WeightBumpView(bumps: [
+        WeightBump(exerciseName: "Pull-Up", change: .reps(from: "6/8/10", to: "7/9/11")),
     ], onDismiss: {})
     .preferredColorScheme(.dark)
 }

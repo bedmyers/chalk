@@ -48,6 +48,7 @@ struct WeightBumpTests {
 
     /// Logs Push Day for `week`. Every set hits unless its exercise is in `misses`.
     /// Finishes with `completeAndCollectBumps` and returns what it earned.
+    @discardableResult
     func finishPushDay(week: Int, misses: Set<String> = []) -> [WeightBump] {
         let session = program.startSession(for: pushDay, week: week, in: context)
         for log in session.sortedExerciseLogs {

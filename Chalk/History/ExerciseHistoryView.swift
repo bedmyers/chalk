@@ -20,7 +20,10 @@ struct ExerciseHistoryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header(outcome)
-                chartCard(points)
+                // Bodyweight lifts progress by reps, so there's no weight to chart.
+                if slot.equipment.isWeighted {
+                    chartCard(points)
+                }
                 blocksCard
             }
             .padding(Theme.Metrics.screenPadding)
@@ -36,16 +39,18 @@ struct ExerciseHistoryView: View {
                 Text("Week \(cycle.week) of \(cycle.length)").eyebrowStyle()
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(outcome.nextWeight.formattedValue)
+                Text(WeightLabel.value(outcome.nextWeight, equipment: slot.equipment))
                     .font(Theme.Fonts.screenTitle)
                     .foregroundStyle(Theme.Colors.weight)
-                Text(outcome.nextWeight.unit.symbol)
-                    .font(Theme.Fonts.unit)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                if slot.equipment.isWeighted {
+                    Text(outcome.nextWeight.unit.symbol)
+                        .font(Theme.Fonts.unit)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                }
             }
             .accessibilityElement(children: .combine)
-            Text("\(slot.targetSets) × \(slot.targetReps) · \(slot.equipment.displayName)")
+            Text("\(slot.targetText(extraReps: outcome.extraReps)) · \(slot.equipment.displayName)")
                 .font(Theme.Fonts.target)
                 .foregroundStyle(Theme.Colors.textSecondary)
         }
@@ -131,10 +136,10 @@ struct ExerciseHistoryView: View {
 
     // MARK: Blocks
 
-    private var blocks: [(id: String, block: BlockResult)] {
+    private var blocks: [(id: String, slot: ExerciseSlot, block: BlockResult)] {
         slot.lineage.reversed().flatMap { slot in
             slot.blockResults.enumerated().reversed().map { index, block in
-                (id: "\(slot.id)-\(index)", block: block)
+                (id: "\(slot.id)-\(index)", slot: slot, block: block)
             }
         }
     }
@@ -148,7 +153,7 @@ struct ExerciseHistoryView: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             ForEach(blocks, id: \.id) { item in
-                BlockRow(block: item.block)
+                BlockRow(block: item.block, slot: item.slot)
                 if item.id != blocks.last?.id {
                     Divider().overlay(Theme.Colors.border)
                 }
@@ -181,10 +186,16 @@ private struct MarkerSymbol: View {
 
 private struct BlockRow: View {
     let block: BlockResult
+    let slot: ExerciseSlot
+
+    /// The weight lifted, or the rep wave for bodyweight lifts.
+    private var label: String {
+        slot.equipment.isWeighted ? block.weight.description : slot.targetText(extraReps: block.extraReps)
+    }
 
     var body: some View {
         HStack {
-            Text(block.weight.description)
+            Text(label)
                 .font(Theme.Fonts.target)
                 .foregroundStyle(Theme.Colors.textPrimary)
             HStack(spacing: 4) {
@@ -199,7 +210,7 @@ private struct BlockRow: View {
                 .foregroundStyle(block.passed ? Theme.Colors.done : Theme.Colors.textSecondary)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(block.weight.description), \(block.weeks.filter { $0 == .hit }.count) of \(block.weeks.count) weeks hit, \(outcome)")
+        .accessibilityLabel("\(label), \(block.weeks.filter { $0 == .hit }.count) of \(block.weeks.count) weeks hit, \(outcome)")
     }
 
     private var outcome: String {
@@ -207,6 +218,8 @@ private struct BlockRow: View {
         case .increased(_, let to): "Up to \(to.formattedValue)"
         case .held: "Held"
         case .deloaded(_, let to): "Deload to \(to.formattedValue)"
+        case .repsRaised: "Reps up"
+        case .repsLowered: "Reps down"
         }
     }
 }

@@ -61,6 +61,7 @@ struct ExerciseSheet: View {
 
     /// The weight that will be saved. An untouched field keeps the current weight as-is.
     private var resolvedWeight: Weight? {
+        guard spec.equipment.isWeighted else { return Weight(thousandths: 0, unit: unit) }
         if weightText == initialWeightText, spec.equipment == original?.equipment {
             return original?.weight
         }
@@ -68,7 +69,9 @@ struct ExerciseSheet: View {
     }
 
     private var enteredIncrement: Weight? {
-        WeightInput.parse(incrementText, unit: unit).flatMap { $0.thousandths > 0 ? $0 : nil }
+        // Bodyweight lifts add reps, not weight; keep whatever increment they had.
+        guard spec.equipment.isWeighted else { return spec.increment }
+        return WeightInput.parse(incrementText, unit: unit).flatMap { $0.thousandths > 0 ? $0 : nil }
     }
 
     private var minimumIncrease: Weight {
@@ -83,6 +86,8 @@ struct ExerciseSheet: View {
         var resolved = spec
         resolved.weight = weight
         resolved.increment = increment
+        // Week 1 of a wave doubles as the single reps value.
+        resolved.targetReps = spec.repsByWeek.first ?? spec.targetReps
         return resolved
     }
 
@@ -92,7 +97,7 @@ struct ExerciseSheet: View {
             switch spec.equipment {
             case .barbell: return "The empty bar is \(ladder.minimum), so that's the lightest it can go."
             case .dumbbell: return "The lightest dumbbell is \(ladder.minimum)."
-            case .machine: break
+            case .machine, .bodyweight: break
             }
         }
         return "Rounds to \(resolved), the nearest weight you can load."
@@ -112,8 +117,10 @@ struct ExerciseSheet: View {
             Form {
                 exerciseSection
                 targetSection
-                weightSection
-                incrementSection
+                if spec.equipment.isWeighted {
+                    weightSection
+                    incrementSection
+                }
             }
             .chalkListStyle()
             .navigationTitle(original == nil ? "New Exercise" : "Edit Exercise")
@@ -137,7 +144,7 @@ struct ExerciseSheet: View {
                 }
             } message: {
                 if let resolvedSpec {
-                    Text("\(resolvedSpec.trimmedName) starts a fresh block at \(resolvedSpec.weight.description). Past workouts are kept.")
+                    Text("\(resolvedSpec.trimmedName) starts a fresh block at \(restartTarget(resolvedSpec)). Past workouts are kept.")
                 }
             }
             .onChange(of: spec.bodyRegion) {
@@ -199,11 +206,56 @@ struct ExerciseSheet: View {
     }
 
     private var targetSection: some View {
-        Section("Target") {
+        Section {
             Stepper("\(spec.targetSets) sets", value: $spec.targetSets, in: 1...10)
-            Stepper("\(spec.targetReps) reps", value: $spec.targetReps, in: 1...30)
+            Picker("Reps", selection: hasWave) {
+                Text("Same every week").tag(false)
+                Text("By week").tag(true)
+            }
+            .pickerStyle(.segmented)
+            if spec.repsByWeek.isEmpty {
+                Stepper("\(spec.targetReps) reps", value: $spec.targetReps, in: 1...50)
+            } else {
+                ForEach(spec.repsByWeek.indices, id: \.self) { week in
+                    Stepper("Week \(week + 1): \(spec.repsByWeek[week]) reps", value: $spec.repsByWeek[week], in: 1...50)
+                }
+            }
+        } header: {
+            Text("Target")
+        } footer: {
+            Text(targetFooter)
         }
         .chalkRow()
+    }
+
+    /// Switches between one rep target and a 3-week wave, keeping week 1's reps.
+    private var hasWave: Binding<Bool> {
+        Binding {
+            !spec.repsByWeek.isEmpty
+        } set: { wave in
+            if wave {
+                let start = spec.targetReps
+                spec.repsByWeek = [start, start + 2, start + 4]
+            } else {
+                spec.targetReps = spec.repsByWeek.first ?? spec.targetReps
+                spec.repsByWeek = []
+            }
+        }
+    }
+
+    private var targetFooter: String {
+        switch (spec.equipment.isWeighted, spec.repsByWeek.isEmpty) {
+        case (true, true): "Hit every set for 3 weeks to add weight."
+        case (true, false): "Reps climb each week. Hit all 3 weeks to add weight and start over at week 1."
+        case (false, true): "Hit every set for 3 weeks to add a rep."
+        case (false, false): "Reps climb each week. Hit all 3 weeks to add a rep to every week."
+        }
+    }
+
+    /// What a restarted exercise starts at: its weight, or its reps for bodyweight lifts.
+    private func restartTarget(_ spec: ExerciseSpec) -> String {
+        guard !spec.equipment.isWeighted else { return spec.weight.description }
+        return "\(spec.targetSets) × \(RepWave.text(reps: spec.targetReps, repsByWeek: spec.repsByWeek))"
     }
 
     private var weightSection: some View {
