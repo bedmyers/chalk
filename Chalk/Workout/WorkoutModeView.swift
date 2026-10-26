@@ -25,9 +25,6 @@ struct WorkoutModeView: View {
     @State private var page: WorkoutPage?
     @State private var setTaps = 0
     @State private var restsFinished = 0
-    /// The lift that was just finished and is sliding away. Its extra-set button
-    /// stays hidden so it doesn't pop in on the way out.
-    @State private var advancingFrom: UUID?
 
     var body: some View {
         let plan = TodayPlan(program: program, day: day, week: week)
@@ -79,7 +76,6 @@ struct WorkoutModeView: View {
                         number: index + 1,
                         count: plan.exercises.count,
                         isMainLift: index == 0,
-                        showsExtraSet: advancingFrom != exercise.id,
                         insets: insets,
                         onTapSet: { tap(exercise, at: $0) },
                         onClearSet: clear
@@ -146,13 +142,9 @@ struct WorkoutModeView: View {
             // Let the last set's tap land before sliding to the next lift.
             let plan = TodayPlan(program: program, day: day, week: week)
             let next = WorkoutPager.page(after: exercise.id, ids: plan.exercises.map(\.id), done: doneIDs(plan))
-            advancingFrom = exercise.id
             Task {
                 try? await Task.sleep(for: .milliseconds(600))
                 go(to: next)
-                // Coming back to this lift later shows the extra-set button again.
-                try? await Task.sleep(for: .milliseconds(600))
-                advancingFrom = nil
             }
         }
     }
@@ -187,8 +179,6 @@ private struct LiftPage: View {
     let number: Int
     let count: Int
     let isMainLift: Bool
-    /// Offer one more button past the target once every target set is in.
-    let showsExtraSet: Bool
     let insets: EdgeInsets
     let onTapSet: (Int) -> Void
     let onClearSet: (SetLog) -> Void
@@ -253,11 +243,11 @@ private struct LiftPage: View {
     }
 
     private var setGrid: some View {
+        // Just the target sets (plus any extras already logged elsewhere). No
+        // extra-set button: it would add another every time it's tapped.
         let total = max(exercise.targetSets, exercise.sets.count)
-        // One more empty button past the target, for an extra set.
-        let shown = exercise.isDone && showsExtraSet ? total + 1 : total
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 4), spacing: 14) {
-            ForEach(0..<shown, id: \.self) { index in
+            ForEach(0..<total, id: \.self) { index in
                 let set = exercise.sets.indices.contains(index) ? exercise.sets[index] : nil
                 SetButton(
                     number: index + 1,
@@ -267,7 +257,6 @@ private struct LiftPage: View {
                     onTap: { onTapSet(index) },
                     onClear: set.map { set in { onClearSet(set) } }
                 )
-                .opacity(index >= total ? 0.5 : 1)
             }
         }
     }
