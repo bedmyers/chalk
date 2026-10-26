@@ -158,7 +158,7 @@ private struct ExerciseHistoryRow: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             Spacer()
-            Text(outcome.nextWeight.formattedValue)
+            Text(WeightLabel.value(outcome.nextWeight, equipment: slot.equipment))
                 .font(Theme.Fonts.rowWeight)
                 .foregroundStyle(Theme.Colors.weight)
                 .lineLimit(1)
@@ -167,7 +167,7 @@ private struct ExerciseHistoryRow: View {
     }
 
     private func caption(_ outcome: ProgressionOutcome) -> String {
-        var parts = ["\(slot.targetSets) × \(slot.targetReps)"]
+        var parts = [slot.targetText(extraReps: outcome.extraReps)]
         if let cycle = outcome.cycle {
             parts.append("Week \(cycle.week) of \(cycle.length)")
         }

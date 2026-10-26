@@ -68,10 +68,11 @@ struct ExerciseSpecTests {
 struct ExerciseCatalogTests {
     @Test func hasAboutTwentyLiftsAcrossEquipment() {
         let all = ExerciseCatalog.all
-        #expect((20...25).contains(all.count))
+        #expect((20...30).contains(all.count))
         #expect(all.contains { $0.equipment == .barbell })
         #expect(all.contains { $0.equipment == .dumbbell })
         #expect(all.contains { $0.equipment == .machine })
+        #expect(all.contains { $0.equipment == .bodyweight })
         #expect(Set(all.map(\.name)).count == all.count, "Names must be unique")
     }
 

@@ -17,6 +17,7 @@ struct PlannedExercise: Identifiable {
     let sets: [SetLog]
 
     var id: UUID { slot.id }
+    var isWeighted: Bool { slot.equipment.isWeighted }
 }
 
 /// Today's workout. Once a session is started its snapshot is shown, so the
@@ -49,12 +50,13 @@ struct TodayPlan {
             }
         } else {
             exercises = day.sortedEntries.compactMap(\.slot).filter { !$0.isArchived }.map { slot in
-                PlannedExercise(
+                let outcome = slot.progression()
+                return PlannedExercise(
                     slot: slot,
                     name: slot.name,
                     targetSets: slot.targetSets,
-                    targetReps: slot.targetReps,
-                    weight: slot.progression().nextWeight,
+                    targetReps: outcome.nextReps,
+                    weight: outcome.nextWeight,
                     sets: []
                 )
             }

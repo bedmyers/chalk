@@ -4,6 +4,11 @@ public enum Equipment: String, Sendable, Hashable, Codable, CaseIterable {
     case dumbbell
     /// Machines and cables: the raw increment is applied with no rounding.
     case machine
+    /// Pull-ups, dips: no load. Progress by adding reps to the wave instead of weight.
+    case bodyweight
+
+    /// Whether the exercise has a weight to load and increase.
+    public var isWeighted: Bool { self != .bodyweight }
 }
 
 /// The user's equipment, stored as settings so it can be made editable later.
@@ -42,6 +47,7 @@ public struct LoadingSettings: Sendable, Hashable {
         case .barbell: plates.nearest(weight)
         case .dumbbell: dumbbells.nearest(weight)
         case .machine: max(weight, Weight(thousandths: 0, unit: weight.unit))
+        case .bodyweight: Weight(thousandths: 0, unit: weight.unit)
         }
     }
 
@@ -62,8 +68,27 @@ public struct LoadingSettings: Sendable, Hashable {
         case .barbell: plates
         case .dumbbell: dumbbells
         case .machine: UnroundedLadder(minimumIncrease: machineMinimumIncrease)
+        case .bodyweight: BodyweightLadder(unit: unit)
         }
     }
+}
+
+/// No load: the only weight is zero. Bodyweight lifts progress by reps, so the
+/// block rule never increases or deloads along this ladder.
+public struct BodyweightLadder: WeightLadder, Hashable {
+    public let unit: WeightUnit
+
+    public init(unit: WeightUnit) {
+        self.unit = unit
+    }
+
+    public var minimum: Weight { Weight(thousandths: 0, unit: unit) }
+
+    public func roundedUp(_ weight: Weight) -> Weight { minimum }
+
+    public func roundedDown(_ weight: Weight) -> Weight? { minimum }
+
+    public func minimumIncrease(from weight: Weight) -> Weight { minimum }
 }
 
 /// Every non-negative weight is loadable, so increments and deloads apply as-is

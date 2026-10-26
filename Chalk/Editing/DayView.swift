@@ -128,7 +128,7 @@ private struct ExerciseRow: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             Spacer()
-            Text(slot.progression().nextWeight.formattedValue)
+            Text(WeightLabel.value(slot.progression().nextWeight, equipment: slot.equipment))
                 .font(Theme.Fonts.rowWeight)
                 .foregroundStyle(Theme.Colors.weight)
                 .lineLimit(1)
@@ -138,7 +138,7 @@ private struct ExerciseRow: View {
     }
 
     private var details: String {
-        var parts = ["\(slot.targetSets) × \(slot.targetReps)", slot.equipment.displayName]
+        var parts = [slot.targetText(extraReps: slot.progression().extraReps), slot.equipment.displayName]
         let otherDays = (slot.entries ?? [])
             .compactMap(\.day)
             .filter { $0.persistentModelID != currentDay.persistentModelID }

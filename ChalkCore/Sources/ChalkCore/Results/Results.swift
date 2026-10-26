@@ -40,17 +40,24 @@ public enum WeekOutcome: Sendable, Hashable {
     case skipped
 }
 
-/// What happened to the weight when a block closed.
+/// What happened when a block closed.
 public enum ProgressionEvent: Sendable, Hashable {
     case held(Weight)
     case increased(from: Weight, to: Weight)
     case deloaded(from: Weight, to: Weight)
+    /// A bodyweight lift passed a block: every week of its wave gains a rep.
+    /// `from` and `to` are the reps added on top of the original wave.
+    case repsRaised(from: Int, to: Int)
+    /// A bodyweight lift failed enough blocks to deload: its wave loses a rep.
+    case repsLowered(from: Int, to: Int)
 
-    /// The weight to lift after this event.
-    public var resultingWeight: Weight {
+    /// The weight to lift after this event, or nil when the weight didn't change
+    /// because the event was about reps.
+    public var resultingWeight: Weight? {
         switch self {
         case .held(let weight): weight
         case .increased(_, let to), .deloaded(_, let to): to
+        case .repsRaised, .repsLowered: nil
         }
     }
 }
@@ -58,12 +65,15 @@ public enum ProgressionEvent: Sendable, Hashable {
 /// A closed block: the completed weeks lifted at one weight, and what happened next.
 public struct BlockResult: Sendable, Hashable {
     public let weight: Weight
+    /// Reps a bodyweight lift had earned on top of its wave during this block.
+    public let extraReps: Int
     /// The completed weeks of the block, each `.hit` or `.miss`.
     public let weeks: [WeekOutcome]
     public let event: ProgressionEvent
 
-    public init(weight: Weight, weeks: [WeekOutcome], event: ProgressionEvent) {
+    public init(weight: Weight, extraReps: Int = 0, weeks: [WeekOutcome], event: ProgressionEvent) {
         self.weight = weight
+        self.extraReps = extraReps
         self.weeks = weeks
         self.event = event
     }

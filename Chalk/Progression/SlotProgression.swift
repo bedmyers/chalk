@@ -22,6 +22,7 @@ extension ExerciseSlot {
         ExerciseTarget(
             sets: targetSets,
             reps: targetReps,
+            repsByWeek: repsByWeek,
             increment: increment,
             equipment: equipment,
             sessionsPerWeek: sessionsPerWeek
@@ -60,6 +61,22 @@ extension ExerciseSlot {
     /// Replays this slot's history to find what to lift next.
     func progression(overriding overrides: SetOverrides = [:], loading: LoadingSettings? = nil) -> ProgressionOutcome {
         progressionRule.rule.evaluate(progressionInput(overriding: overrides, loading: loading))
+    }
+
+    /// The rep wave as it stands now, including reps a bodyweight lift has earned.
+    /// Empty for the same reps every week.
+    func currentRepsByWeek(extraReps: Int) -> [Int] {
+        repsByWeek.map { $0 + extraReps }
+    }
+
+    /// "6/8/10" or "8", with any reps a bodyweight lift has earned.
+    func repsText(extraReps: Int) -> String {
+        RepWave.text(reps: targetReps + extraReps, repsByWeek: currentRepsByWeek(extraReps: extraReps))
+    }
+
+    /// "4 × 6/8/10" or "3 × 8", with any reps a bodyweight lift has earned.
+    func targetText(extraReps: Int) -> String {
+        "\(targetSets) × \(repsText(extraReps: extraReps))"
     }
 
     /// Closed blocks, oldest first, for rules that work in blocks.

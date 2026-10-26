@@ -92,7 +92,7 @@ extension Program {
     ) -> WorkoutSession {
         let slots = day.sortedEntries.compactMap(\.slot).filter { !$0.isArchived }
         // Compute prescriptions before the new logs exist, so they can't affect the replay.
-        let prescribed = slots.map { $0.progression().nextWeight }
+        let prescribed = slots.map { $0.progression() }
 
         let session = WorkoutSession(weekNumber: week, status: status)
         context.insert(session)
@@ -102,13 +102,14 @@ extension Program {
             session.completedAt = Date.now
         }
 
-        for (index, (slot, weight)) in zip(slots, prescribed).enumerated() {
+        for (index, (slot, outcome)) in zip(slots, prescribed).enumerated() {
             let log = ExerciseLog(
                 order: index,
                 exerciseName: slot.name,
-                prescribedWeight: weight,
+                prescribedWeight: outcome.nextWeight,
                 targetSets: slot.targetSets,
-                targetReps: slot.targetReps,
+                // This week's reps, so history shows what was asked that day.
+                targetReps: outcome.nextReps,
                 catalogID: slot.catalogID
             )
             context.insert(log)

@@ -15,6 +15,8 @@ nonisolated struct ExerciseSpec: Equatable, Sendable {
     var bodyRegion: BodyRegion
     var targetSets: Int
     var targetReps: Int
+    /// A rep wave, one value per block week. Empty means `targetReps` every week.
+    var repsByWeek: [Int] = []
     var increment: Weight
     /// The starting weight for a new exercise, or the current weight for an existing one.
     var weight: Weight
@@ -40,6 +42,7 @@ nonisolated struct ExerciseSpec: Equatable, Sendable {
     func restartsBlock(comparedTo original: ExerciseSpec) -> Bool {
         targetSets != original.targetSets
             || targetReps != original.targetReps
+            || repsByWeek != original.repsByWeek
             || increment != original.increment
             || equipment != original.equipment
             || weight != original.weight
@@ -92,6 +95,9 @@ nonisolated enum ExerciseCatalog {
         CatalogExercise(id: "leg-press", name: "Leg Press", equipment: .machine, bodyRegion: .lower),
         CatalogExercise(id: "leg-curl", name: "Leg Curl", equipment: .machine, bodyRegion: .lower),
         CatalogExercise(id: "leg-extension", name: "Leg Extension", equipment: .machine, bodyRegion: .lower),
+        // Bodyweight
+        CatalogExercise(id: "pull-up", name: "Pull-Up", equipment: .bodyweight, bodyRegion: .upper),
+        CatalogExercise(id: "dip", name: "Dip", equipment: .bodyweight, bodyRegion: .upper),
     ]
 
     /// The built-in lift with exactly this name.
@@ -138,6 +144,7 @@ extension Equipment {
         case .barbell: "Barbell"
         case .dumbbell: "Dumbbell"
         case .machine: "Machine"
+        case .bodyweight: "Bodyweight"
         }
     }
 }
@@ -148,5 +155,21 @@ extension BodyRegion {
         case .upper: "Upper"
         case .lower: "Lower"
         }
+    }
+}
+
+/// How weights read on screen.
+nonisolated enum WeightLabel {
+    /// Shown in place of a weight for bodyweight lifts.
+    static let bodyweight = "BW"
+
+    /// "185 lb", or "BW" for bodyweight lifts.
+    static func text(_ weight: Weight, equipment: Equipment) -> String {
+        equipment.isWeighted ? weight.description : bodyweight
+    }
+
+    /// "185", or "BW" for bodyweight lifts.
+    static func value(_ weight: Weight, equipment: Equipment) -> String {
+        equipment.isWeighted ? weight.formattedValue : bodyweight
     }
 }

@@ -34,14 +34,27 @@ public struct CycleProgress: Sendable, Hashable {
 /// A rule's decision about what to lift next.
 public struct ProgressionOutcome: Sendable, Hashable {
     public var nextWeight: Weight
-    /// Every weight decision so far, oldest first. Diff before and after logging
-    /// a week to detect a fresh increase worth celebrating.
+    /// The reps to aim for in each set of the next session.
+    public var nextReps: Int
+    /// Reps a bodyweight lift has earned on top of its original wave. Zero for
+    /// weighted lifts.
+    public var extraReps: Int
+    /// Every decision so far, oldest first. Diff before and after logging a week
+    /// to detect a fresh increase worth celebrating.
     public var events: [ProgressionEvent]
     /// Position in the current cycle, for rules that have one.
     public var cycle: CycleProgress?
 
-    public init(nextWeight: Weight, events: [ProgressionEvent], cycle: CycleProgress?) {
+    public init(
+        nextWeight: Weight,
+        nextReps: Int,
+        extraReps: Int = 0,
+        events: [ProgressionEvent],
+        cycle: CycleProgress?
+    ) {
         self.nextWeight = nextWeight
+        self.nextReps = nextReps
+        self.extraReps = extraReps
         self.events = events
         self.cycle = cycle
     }

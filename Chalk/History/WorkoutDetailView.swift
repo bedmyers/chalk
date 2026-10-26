@@ -36,13 +36,13 @@ struct WorkoutDetailView: View {
                     }
                     ForEach(log.sortedSets) { set in
                         // `order` is 0-based and renumbered on every add or delete.
-                        SetHistoryRow(number: set.order + 1, set: set, targetReps: log.targetReps)
+                        SetHistoryRow(number: set.order + 1, set: set, targetReps: log.targetReps, equipment: log.slot?.equipment ?? .barbell)
                             .chalkRow()
                     }
                 } header: {
                     Text(log.exerciseName)
                 } footer: {
-                    Text("Prescribed \(log.prescribedWeight.description) · \(log.targetSets) × \(log.targetReps)")
+                    Text("Prescribed \(WeightLabel.text(log.prescribedWeight, equipment: log.slot?.equipment ?? .barbell)) · \(log.targetSets) × \(log.targetReps)")
                 }
             }
         }
@@ -73,6 +73,7 @@ private struct SetHistoryRow: View {
     let number: Int
     let set: SetLog
     let targetReps: Int
+    let equipment: Equipment
 
     var body: some View {
         let hit = set.reps >= targetReps
@@ -82,7 +83,7 @@ private struct SetHistoryRow: View {
             Spacer()
             Label("\(set.reps) reps", systemImage: hit ? "checkmark.circle.fill" : "circle")
                 .foregroundStyle(hit ? Theme.Colors.done : Theme.Colors.textPrimary)
-            Text(set.weight.description)
+            Text(WeightLabel.text(set.weight, equipment: equipment))
                 .foregroundStyle(Theme.Colors.textSecondary)
                 .frame(minWidth: 80, alignment: .trailing)
         }

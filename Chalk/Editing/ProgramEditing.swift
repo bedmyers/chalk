@@ -130,6 +130,7 @@ extension Program {
             bodyRegion: spec.bodyRegion,
             targetSets: spec.targetSets,
             targetReps: spec.targetReps,
+            repsByWeek: spec.repsByWeek,
             increment: spec.increment,
             startingWeight: spec.weight,
             catalogID: spec.resolvedCatalogID
@@ -183,16 +184,19 @@ extension ProgramDay {
 }
 
 extension ExerciseSlot {
-    /// The slot as the editor sees it, with its current weight.
+    /// The slot as the editor sees it, with its current weight. A bodyweight lift's
+    /// earned reps are folded into its targets, so a restart carries them over.
     var spec: ExerciseSpec {
-        ExerciseSpec(
+        let outcome = progression()
+        return ExerciseSpec(
             name: name,
             equipment: equipment,
             bodyRegion: bodyRegion,
             targetSets: targetSets,
-            targetReps: targetReps,
+            targetReps: targetReps + outcome.extraReps,
+            repsByWeek: currentRepsByWeek(extraReps: outcome.extraReps),
             increment: increment,
-            weight: progression().nextWeight,
+            weight: outcome.nextWeight,
             catalogID: catalogID
         )
     }
@@ -221,6 +225,7 @@ extension ExerciseSlot {
             bodyRegion: spec.bodyRegion,
             targetSets: spec.targetSets,
             targetReps: spec.targetReps,
+            repsByWeek: spec.repsByWeek,
             increment: spec.increment,
             startingWeight: spec.weight,
             lineageID: lineageID,

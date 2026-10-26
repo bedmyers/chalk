@@ -120,7 +120,7 @@ nonisolated enum StartingWeights {
     /// or 20 lb / 10 kg on a machine (a stack's real minimum isn't known).
     static func lightest(for equipment: Equipment, unit: WeightUnit) -> Weight {
         switch equipment {
-        case .barbell, .dumbbell:
+        case .barbell, .dumbbell, .bodyweight:
             LoadingSettings.standard(for: unit).ladder(for: equipment).minimum
         case .machine:
             unit == .pounds ? .pounds(20) : .kilograms(10)

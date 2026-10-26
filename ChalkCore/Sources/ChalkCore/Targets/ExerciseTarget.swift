@@ -17,7 +17,11 @@ public enum BodyRegion: String, Sendable, Hashable, Codable, CaseIterable {
 /// What an exercise slot asks for each session, and how it progresses.
 public struct ExerciseTarget: Sendable, Hashable {
     public var sets: Int
+    /// Reps for every week, used when `repsByWeek` is empty.
     public var reps: Int
+    /// A rep wave: the reps for each week of a block (e.g. [6, 8, 10]). Empty means
+    /// `reps` every week. A wave shorter than the block repeats its last week.
+    public var repsByWeek: [Int]
     /// Added to the weight after a passed block, then rounded up to a loadable weight.
     public var increment: Weight
     public var equipment: Equipment
@@ -28,14 +32,23 @@ public struct ExerciseTarget: Sendable, Hashable {
     public init(
         sets: Int,
         reps: Int,
+        repsByWeek: [Int] = [],
         increment: Weight,
         equipment: Equipment,
         sessionsPerWeek: Int = 1
     ) {
         self.sets = sets
         self.reps = reps
+        self.repsByWeek = repsByWeek
         self.increment = increment
         self.equipment = equipment
         self.sessionsPerWeek = sessionsPerWeek
+    }
+
+    /// The reps asked for in a week of the block (0-based), plus any `extraReps`
+    /// a bodyweight lift has earned.
+    public func reps(inBlockWeek index: Int, extraReps: Int = 0) -> Int {
+        let base = repsByWeek.isEmpty ? reps : repsByWeek[min(max(index, 0), repsByWeek.count - 1)]
+        return base + extraReps
     }
 }

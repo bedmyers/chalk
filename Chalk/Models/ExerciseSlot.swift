@@ -34,6 +34,9 @@ extension SchemaV1 {
         var bodyRegionRaw: String = BodyRegion.lower.rawValue
         var targetSets: Int = 3
         var targetReps: Int = 8
+        /// A rep wave, one value per block week ("6,8,10"). Empty means
+        /// `targetReps` every week.
+        var repsByWeekRaw: String = ""
         var incrementThousandths: Int = 0
         var startingWeightThousandths: Int = 0
         var progressionRuleRaw: String = ProgressionRuleKind.threeWeekBlock.rawValue
@@ -57,6 +60,7 @@ extension SchemaV1 {
             bodyRegion: BodyRegion,
             targetSets: Int,
             targetReps: Int,
+            repsByWeek: [Int] = [],
             increment: Weight,
             startingWeight: Weight,
             lineageID: UUID = UUID(),
@@ -67,7 +71,8 @@ extension SchemaV1 {
             self.equipmentRaw = equipment.rawValue
             self.bodyRegionRaw = bodyRegion.rawValue
             self.targetSets = targetSets
-            self.targetReps = targetReps
+            self.targetReps = repsByWeek.first ?? targetReps
+            self.repsByWeekRaw = RepWave.raw(repsByWeek)
             self.incrementThousandths = increment.thousandths
             self.startingWeightThousandths = startingWeight.thousandths
             self.lineageID = lineageID
@@ -89,8 +94,30 @@ extension SchemaV1 {
             ProgressionRuleKind(rawValue: progressionRuleRaw) ?? .threeWeekBlock
         }
 
+        /// The rep wave, or empty for the same reps every week.
+        var repsByWeek: [Int] { RepWave.parse(repsByWeekRaw) }
+
         var increment: Weight { Weight(thousandths: incrementThousandths, unit: unit) }
         var startingWeight: Weight { Weight(thousandths: startingWeightThousandths, unit: unit) }
         var isArchived: Bool { archivedAt != nil }
+    }
+}
+
+/// Stores a rep wave as text so it syncs as a plain CloudKit field.
+nonisolated enum RepWave {
+    static func raw(_ reps: [Int]) -> String {
+        reps.map(String.init).joined(separator: ",")
+    }
+
+    /// "6,8,10" → [6, 8, 10]. Anything unreadable means no wave.
+    static func parse(_ raw: String) -> [Int] {
+        let parts = raw.split(separator: ",").map { Int($0.trimmingCharacters(in: .whitespaces)) }
+        let reps = parts.compactMap { $0 }
+        return reps.count == parts.count && reps.allSatisfy { $0 > 0 } ? reps : []
+    }
+
+    /// "6/8/10", or "8" for the same reps every week.
+    static func text(reps: Int, repsByWeek: [Int]) -> String {
+        repsByWeek.isEmpty ? "\(reps)" : repsByWeek.map(String.init).joined(separator: "/")
     }
 }
