@@ -50,6 +50,9 @@ final class WorkoutModeUITests: XCTestCase {
             XCTAssertTrue(skipRest(in: app).waitForExistence(timeout: 2), "Logging a set starts rest")
         }
 
+        // No extra-set button pops in while the finished lift slides away.
+        XCTAssertNil(visibleButton("Set 5, not logged", in: app), "The extra-set button shouldn't appear on the way out")
+
         // Finishing the last target set slides to the next lift.
         let next = expectation(for: NSPredicate { _, _ in
             app.staticTexts.matching(NSPredicate(format: "label ==[c] 'Overhead Press'")).allElementsBoundByIndex.contains { $0.isHittable }
