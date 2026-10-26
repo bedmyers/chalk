@@ -15,6 +15,10 @@ enum SampleData {
     /// weeks of history in memory. For UI tests.
     static let sampleHistoryLaunchArgument = "-ChalkSampleHistory"
 
+    /// Launch argument that starts the app like a first launch: an empty in-memory
+    /// store and no saved onboarding or unit choice. For onboarding UI tests.
+    static let emptyStoreLaunchArgument = "-ChalkEmptyStore"
+
     private struct SampleExercise {
         let name: String
         let equipment: Equipment

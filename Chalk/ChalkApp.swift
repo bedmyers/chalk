@@ -14,8 +14,20 @@ struct ChalkApp: App {
     let modelContainer: ModelContainer = {
         #if DEBUG
         // UI tests launch with sample history in a throwaway in-memory store.
-        if ProcessInfo.processInfo.arguments.contains(SampleData.sampleHistoryLaunchArgument) {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains(SampleData.sampleHistoryLaunchArgument) {
             return SampleData.previewContainer(completedWeeks: 3)
+        }
+        if arguments.contains(SampleData.emptyStoreLaunchArgument) {
+            // A true first launch: forget onboarding and unit choices from earlier runs.
+            // (Passing them as launch arguments would pin them and ignore what the app saves.)
+            UserDefaults.standard.removeObject(forKey: "hasSeenOnboarding")
+            UserDefaults.standard.removeObject(forKey: "defaultUnit")
+            do {
+                return try ChalkModelContainer.make(inMemory: true)
+            } catch {
+                fatalError("Could not create in-memory ModelContainer: \(error)")
+            }
         }
         #endif
         do {
