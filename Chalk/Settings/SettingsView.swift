@@ -7,10 +7,10 @@ import ChalkCore
 import Foundation
 import SwiftUI
 
-/// Links the app shows. Set before the first TestFlight build.
+/// Links the app shows.
 enum AppLinks {
-    /// TODO: Set to the hosted privacy policy (see docs/privacy-policy.md) before TestFlight.
-    static let privacyPolicy: URL? = nil
+    /// The hosted copy of docs/privacy-policy.md (GitHub Pages).
+    static let privacyPolicy = URL(string: "https://bedmyers.github.io/chalk/privacy-policy")
 }
 
 /// App-wide preferences and information.
