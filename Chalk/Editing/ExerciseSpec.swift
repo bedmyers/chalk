@@ -80,10 +80,16 @@ nonisolated enum ExerciseCatalog {
         CatalogExercise(name: "Lat Pulldown", equipment: .machine, bodyRegion: .upper),
         CatalogExercise(name: "Seated Cable Row", equipment: .machine, bodyRegion: .upper),
         CatalogExercise(name: "Cable Triceps Pushdown", equipment: .machine, bodyRegion: .upper),
+        CatalogExercise(name: "Face Pull", equipment: .machine, bodyRegion: .upper),
         CatalogExercise(name: "Leg Press", equipment: .machine, bodyRegion: .lower),
         CatalogExercise(name: "Leg Curl", equipment: .machine, bodyRegion: .lower),
         CatalogExercise(name: "Leg Extension", equipment: .machine, bodyRegion: .lower),
     ]
+
+    /// The built-in lift with exactly this name.
+    static func named(_ name: String) -> CatalogExercise? {
+        all.first { $0.name == name }
+    }
 
     /// Built-in lifts whose names contain `query`, ignoring case. Empty for an
     /// empty query or an exact match, so suggestions get out of the way once chosen.
