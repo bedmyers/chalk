@@ -34,6 +34,14 @@ struct TodayWorkoutView: View {
     @State private var isConfirmingSkip = false
     @State private var setTaps = 0
     @State private var celebration: Celebration?
+    @State private var isInWorkoutMode = false
+    /// Lives here so rest keeps counting if you step out of workout mode.
+    @State private var rest = RestTimer()
+    /// Workout mode finished the workout; celebrate once its cover is gone.
+    @State private var finishOnDismiss = false
+    /// Bumped when workout mode closes. Sets logged there don't always notify this
+    /// view through SwiftData, so reading this in `body` forces a fresh plan.
+    @State private var workoutModeCloses = 0
 
     /// Weight increases earned by the workout just finished.
     struct Celebration: Identifiable {
@@ -42,6 +50,7 @@ struct TodayWorkoutView: View {
     }
 
     var body: some View {
+        let _ = workoutModeCloses
         Group {
             if let next = program.nextWorkout() {
                 workout(TodayPlan(program: program, day: next.day, week: next.week))
@@ -65,6 +74,14 @@ struct TodayWorkoutView: View {
                 header(plan)
                     .padding(.bottom, 8)
 
+                Button {
+                    isInWorkoutMode = true
+                } label: {
+                    Label(plan.session == nil ? "Start Workout" : "Resume Workout", systemImage: "play.fill")
+                }
+                .buttonStyle(.chalkPrimary)
+                .padding(.bottom, 8)
+
                 ForEach(plan.exercises) { exercise in
                     ExerciseCard(
                         exercise: exercise,
@@ -78,7 +95,7 @@ struct TodayWorkoutView: View {
                     Button("Finish Workout") {
                         finish(plan)
                     }
-                    .buttonStyle(.chalkPrimary)
+                    .buttonStyle(.chalkSecondary)
                     .disabled(plan.session == nil)
 
                     Button("Skip This Day") {
@@ -92,6 +109,11 @@ struct TodayWorkoutView: View {
         }
         .scrollIndicators(.hidden)
         .sensoryFeedback(.impact(weight: .medium), trigger: setTaps)
+        .fullScreenCover(isPresented: $isInWorkoutMode, onDismiss: finishIfRequested) {
+            WorkoutModeView(program: program, day: plan.day, week: plan.week, rest: $rest) {
+                finishOnDismiss = true
+            }
+        }
         .confirmationDialog("Skip \(plan.day.name)?", isPresented: $isConfirmingSkip, titleVisibility: .visible) {
             Button("Skip Day", role: .destructive) {
                 program.skip(plan.day, week: plan.week, in: modelContext)
@@ -130,24 +152,26 @@ struct TodayWorkoutView: View {
 
     /// Starts the session on the first tap, then logs or adjusts the set.
     private func tapSet(_ exercise: PlannedExercise, at index: Int, in plan: TodayPlan) {
-        let session = program.startSession(for: plan.day, week: plan.week, in: modelContext)
-        guard let log = session.sortedExerciseLogs.first(where: {
-            $0.slot?.persistentModelID == exercise.slot.persistentModelID
-        }) else { return }
-
-        let sets = log.sortedSets
-        if sets.indices.contains(index) {
-            sets[index].reps = SetTap.reps(afterTapping: sets[index].reps, target: log.targetReps)
-        } else {
-            log.logSet(reps: log.targetReps, in: modelContext)
-        }
+        program.tapSet(index, of: exercise.slot, day: plan.day, week: plan.week, in: modelContext)
         setTaps += 1
     }
 
     /// Completes the session and celebrates any weight increases it earned.
     private func finish(_ plan: TodayPlan) {
+        rest.stop()
+        RestAlert.cancel()
         guard let bumps = plan.session?.completeAndCollectBumps(), !bumps.isEmpty else { return }
         celebration = Celebration(bumps: bumps)
+    }
+
+    /// Refreshes after workout mode closes, and finishes if it asked to, so the
+    /// celebration isn't presented over it.
+    private func finishIfRequested() {
+        workoutModeCloses += 1
+        guard finishOnDismiss else { return }
+        finishOnDismiss = false
+        guard let next = program.nextWorkout() else { return }
+        finish(TodayPlan(program: program, day: next.day, week: next.week))
     }
 
     private func clear(_ set: SetLog) {

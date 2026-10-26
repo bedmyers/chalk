@@ -36,6 +36,12 @@ enum Theme {
     }
 
     enum Fonts {
+        /// The weight on a workout-mode page, readable from across the bench.
+        static let focusWeight = custom(.fugazOne, 150, relativeTo: .largeTitle)
+        /// Exercise name on a workout-mode page. Use with uppercase and tracking.
+        static let focusName = custom(.barlowBold, 38, relativeTo: .title)
+        /// The rest countdown.
+        static let timer = custom(.fugazOne, 40, relativeTo: .title)
         /// Today's main lift weight.
         static let heroWeight = custom(.fugazOne, 96, relativeTo: .largeTitle)
         /// Screen titles ("PUSH DAY").
