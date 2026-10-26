@@ -42,7 +42,7 @@ struct WorkoutDetailView: View {
                 } header: {
                     Text(log.exerciseName)
                 } footer: {
-                    Text("Prescribed \(log.prescribedWeight) · \(log.targetSets) × \(log.targetReps)")
+                    Text("Prescribed \(log.prescribedWeight.description) · \(log.targetSets) × \(log.targetReps)")
                 }
             }
         }
