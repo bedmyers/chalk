@@ -64,7 +64,8 @@ enum SampleData {
                     targetSets: exercise.sets,
                     targetReps: exercise.reps,
                     increment: exercise.bodyRegion.defaultIncrement(in: .pounds),
-                    startingWeight: .pounds(exercise.pounds)
+                    startingWeight: .pounds(exercise.pounds),
+                    catalogID: ExerciseCatalog.matching(name: exercise.name)?.id
                 )
                 context.insert(slot)
                 slot.program = program

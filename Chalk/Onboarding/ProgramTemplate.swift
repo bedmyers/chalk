@@ -176,6 +176,7 @@ extension ProgramTemplate {
                 // `startingWeights` is checked above, so this always has a value.
                 let weight = startingWeights[lift.name] ?? StartingWeights.lightest(for: lift.equipment, unit: unit)
                 spec.weight = loading.snapped(weight, for: lift.equipment)
+                spec.catalogID = lift.catalogEntry?.id
                 program.addExercise(spec, to: day, in: context)
             }
         }

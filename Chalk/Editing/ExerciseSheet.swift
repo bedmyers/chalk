@@ -143,6 +143,11 @@ struct ExerciseSheet: View {
             .onChange(of: spec.bodyRegion) {
                 applyDefaultIncrementIfNeeded()
             }
+            .onChange(of: spec.name) {
+                // Link to the catalog lift with this name. Renaming an existing
+                // exercise to something custom keeps its original link.
+                spec.catalogID = ExerciseCatalog.matching(name: spec.name)?.id ?? original?.catalogID
+            }
             .onChange(of: focusedField) { previous, _ in
                 // Show the snapped value once the user leaves the weight field.
                 if previous == .weight, let resolvedWeight, weightText != initialWeightText {
@@ -269,6 +274,7 @@ struct ExerciseSheet: View {
         spec.name = suggestion.name
         spec.equipment = suggestion.equipment
         spec.bodyRegion = suggestion.bodyRegion
+        spec.catalogID = suggestion.id
         applyDefaultIncrementIfNeeded()
         focusedField = nil
     }

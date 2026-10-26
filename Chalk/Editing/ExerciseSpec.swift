@@ -18,6 +18,8 @@ nonisolated struct ExerciseSpec: Equatable, Sendable {
     var increment: Weight
     /// The starting weight for a new exercise, or the current weight for an existing one.
     var weight: Weight
+    /// The built-in lift this is, if any. Powers exercise info and substitutions.
+    var catalogID: String? = nil
 
     /// A blank barbell exercise starting at the empty bar.
     static func new(unit: WeightUnit) -> ExerciseSpec {
@@ -44,51 +46,69 @@ nonisolated struct ExerciseSpec: Equatable, Sendable {
     }
 
     var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// The catalog link to save: the chosen lift, or one whose name was typed exactly.
+    var resolvedCatalogID: String? {
+        catalogID ?? ExerciseCatalog.matching(name: name)?.id
+    }
 }
 
 /// A built-in lift that prefills equipment and body region. Free-text names are still allowed.
 nonisolated struct CatalogExercise: Sendable, Hashable, Identifiable {
+    /// Stable identifier stored on exercises (`ExerciseSlot.catalogID`). Never change
+    /// or reuse one: saved data refers to it. Display names can change freely.
+    let id: String
     let name: String
     let equipment: Equipment
     let bodyRegion: BodyRegion
-
-    var id: String { name }
 }
 
 nonisolated enum ExerciseCatalog {
     static let all: [CatalogExercise] = [
         // Barbell
-        CatalogExercise(name: "Back Squat", equipment: .barbell, bodyRegion: .lower),
-        CatalogExercise(name: "Front Squat", equipment: .barbell, bodyRegion: .lower),
-        CatalogExercise(name: "Deadlift", equipment: .barbell, bodyRegion: .lower),
-        CatalogExercise(name: "Romanian Deadlift", equipment: .barbell, bodyRegion: .lower),
-        CatalogExercise(name: "Hip Thrust", equipment: .barbell, bodyRegion: .lower),
-        CatalogExercise(name: "Bench Press", equipment: .barbell, bodyRegion: .upper),
-        CatalogExercise(name: "Incline Bench Press", equipment: .barbell, bodyRegion: .upper),
-        CatalogExercise(name: "Overhead Press", equipment: .barbell, bodyRegion: .upper),
-        CatalogExercise(name: "Barbell Row", equipment: .barbell, bodyRegion: .upper),
+        CatalogExercise(id: "back-squat", name: "Back Squat", equipment: .barbell, bodyRegion: .lower),
+        CatalogExercise(id: "front-squat", name: "Front Squat", equipment: .barbell, bodyRegion: .lower),
+        CatalogExercise(id: "deadlift", name: "Deadlift", equipment: .barbell, bodyRegion: .lower),
+        CatalogExercise(id: "romanian-deadlift", name: "Romanian Deadlift", equipment: .barbell, bodyRegion: .lower),
+        CatalogExercise(id: "hip-thrust", name: "Hip Thrust", equipment: .barbell, bodyRegion: .lower),
+        CatalogExercise(id: "bench-press", name: "Bench Press", equipment: .barbell, bodyRegion: .upper),
+        CatalogExercise(id: "incline-bench-press", name: "Incline Bench Press", equipment: .barbell, bodyRegion: .upper),
+        CatalogExercise(id: "overhead-press", name: "Overhead Press", equipment: .barbell, bodyRegion: .upper),
+        CatalogExercise(id: "barbell-row", name: "Barbell Row", equipment: .barbell, bodyRegion: .upper),
         // Dumbbell
-        CatalogExercise(name: "DB Bench Press", equipment: .dumbbell, bodyRegion: .upper),
-        CatalogExercise(name: "Incline DB Press", equipment: .dumbbell, bodyRegion: .upper),
-        CatalogExercise(name: "DB Shoulder Press", equipment: .dumbbell, bodyRegion: .upper),
-        CatalogExercise(name: "DB Row", equipment: .dumbbell, bodyRegion: .upper),
-        CatalogExercise(name: "DB Curl", equipment: .dumbbell, bodyRegion: .upper),
-        CatalogExercise(name: "DB Lateral Raise", equipment: .dumbbell, bodyRegion: .upper),
-        CatalogExercise(name: "Goblet Squat", equipment: .dumbbell, bodyRegion: .lower),
-        CatalogExercise(name: "DB Walking Lunge", equipment: .dumbbell, bodyRegion: .lower),
+        CatalogExercise(id: "db-bench-press", name: "DB Bench Press", equipment: .dumbbell, bodyRegion: .upper),
+        CatalogExercise(id: "incline-db-press", name: "Incline DB Press", equipment: .dumbbell, bodyRegion: .upper),
+        CatalogExercise(id: "db-shoulder-press", name: "DB Shoulder Press", equipment: .dumbbell, bodyRegion: .upper),
+        CatalogExercise(id: "db-row", name: "DB Row", equipment: .dumbbell, bodyRegion: .upper),
+        CatalogExercise(id: "db-curl", name: "DB Curl", equipment: .dumbbell, bodyRegion: .upper),
+        CatalogExercise(id: "db-lateral-raise", name: "DB Lateral Raise", equipment: .dumbbell, bodyRegion: .upper),
+        CatalogExercise(id: "goblet-squat", name: "Goblet Squat", equipment: .dumbbell, bodyRegion: .lower),
+        CatalogExercise(id: "db-walking-lunge", name: "DB Walking Lunge", equipment: .dumbbell, bodyRegion: .lower),
         // Machine / cable
-        CatalogExercise(name: "Lat Pulldown", equipment: .machine, bodyRegion: .upper),
-        CatalogExercise(name: "Seated Cable Row", equipment: .machine, bodyRegion: .upper),
-        CatalogExercise(name: "Cable Triceps Pushdown", equipment: .machine, bodyRegion: .upper),
-        CatalogExercise(name: "Face Pull", equipment: .machine, bodyRegion: .upper),
-        CatalogExercise(name: "Leg Press", equipment: .machine, bodyRegion: .lower),
-        CatalogExercise(name: "Leg Curl", equipment: .machine, bodyRegion: .lower),
-        CatalogExercise(name: "Leg Extension", equipment: .machine, bodyRegion: .lower),
+        CatalogExercise(id: "lat-pulldown", name: "Lat Pulldown", equipment: .machine, bodyRegion: .upper),
+        CatalogExercise(id: "seated-cable-row", name: "Seated Cable Row", equipment: .machine, bodyRegion: .upper),
+        CatalogExercise(id: "cable-triceps-pushdown", name: "Cable Triceps Pushdown", equipment: .machine, bodyRegion: .upper),
+        CatalogExercise(id: "face-pull", name: "Face Pull", equipment: .machine, bodyRegion: .upper),
+        CatalogExercise(id: "leg-press", name: "Leg Press", equipment: .machine, bodyRegion: .lower),
+        CatalogExercise(id: "leg-curl", name: "Leg Curl", equipment: .machine, bodyRegion: .lower),
+        CatalogExercise(id: "leg-extension", name: "Leg Extension", equipment: .machine, bodyRegion: .lower),
     ]
 
     /// The built-in lift with exactly this name.
     static func named(_ name: String) -> CatalogExercise? {
         all.first { $0.name == name }
+    }
+
+    /// The built-in lift with this stable ID.
+    static func withID(_ id: String) -> CatalogExercise? {
+        all.first { $0.id == id }
+    }
+
+    /// The built-in lift whose name matches, ignoring case and surrounding spaces,
+    /// so a typed "bench press" still links to the catalog.
+    static func matching(name: String) -> CatalogExercise? {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return all.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
     }
 
     /// Built-in lifts whose names contain `query`, ignoring case. Empty for an

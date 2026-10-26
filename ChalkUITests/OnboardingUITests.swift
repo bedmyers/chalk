@@ -11,6 +11,12 @@ final class OnboardingUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// The layouts under test are portrait; a simulator left in landscape hides buttons.
+    @MainActor
+    override func setUp() async throws {
+        XCUIDevice.shared.orientation = .portrait
+    }
+
     @MainActor
     private func launchFresh() -> XCUIApplication {
         let app = XCUIApplication()

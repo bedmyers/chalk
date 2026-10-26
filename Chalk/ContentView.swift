@@ -78,13 +78,26 @@ struct ContentView: View {
 struct ProgramTab: View {
     @Query(filter: #Predicate<Program> { $0.archivedAt == nil }, sort: \Program.createdAt)
     private var programs: [Program]
+    @State private var isShowingSettings = false
 
     var body: some View {
-        if let program = programs.first {
-            ProgramView(program: program)
-        } else {
-            NoProgramView()
-                .background(Theme.Colors.background)
+        Group {
+            if let program = programs.first {
+                ProgramView(program: program)
+            } else {
+                NoProgramView()
+                    .background(Theme.Colors.background)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Settings", systemImage: "gearshape") {
+                    isShowingSettings = true
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView()
         }
     }
 }

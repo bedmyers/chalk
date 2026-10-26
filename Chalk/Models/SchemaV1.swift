@@ -3,6 +3,7 @@
 //  Chalk
 //
 
+import CoreData
 import Foundation
 import SwiftData
 
@@ -52,10 +53,51 @@ enum ChalkModelContainer {
         } else {
             ModelConfiguration(schema: schema, cloudKitDatabase: .private(cloudKitContainerID))
         }
+        #if DEBUG
+        if !inMemory, ProcessInfo.processInfo.arguments.contains(initializeCloudKitSchemaArgument) {
+            try initializeCloudKitSchema(storeURL: configuration.url)
+        }
+        #endif
         return try ModelContainer(
             for: schema,
             migrationPlan: ChalkMigrationPlan.self,
             configurations: [configuration]
         )
     }
+
+    #if DEBUG
+    /// Launch argument that pushes the full schema to the CloudKit *development*
+    /// environment. Run once after any model change, then deploy to production in
+    /// CloudKit Console. It blocks syncing while it runs, so it's never automatic.
+    static let initializeCloudKitSchemaArgument = "-ChalkInitializeCloudKitSchema"
+
+    /// Uploads representative records for every model so CloudKit learns each record
+    /// type and field, then removes them. SwiftData has no API for this, so it goes
+    /// through Core Data's CloudKit container on the same store file, and unloads it
+    /// before SwiftData opens the store.
+    private static func initializeCloudKitSchema(storeURL: URL) throws {
+        try autoreleasepool {
+            let description = NSPersistentStoreDescription(url: storeURL)
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: cloudKitContainerID
+            )
+            description.shouldAddStoreAsynchronously = false
+
+            guard let model = NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.models) else {
+                throw CocoaError(.coderInvalidValue)
+            }
+            let container = NSPersistentCloudKitContainer(name: "Chalk", managedObjectModel: model)
+            container.persistentStoreDescriptions = [description]
+            var loadError: Error?
+            container.loadPersistentStores { _, error in loadError = error }
+            if let loadError { throw loadError }
+
+            try container.initializeCloudKitSchema()
+
+            if let store = container.persistentStoreCoordinator.persistentStores.first {
+                try container.persistentStoreCoordinator.remove(store)
+            }
+        }
+    }
+    #endif
 }
